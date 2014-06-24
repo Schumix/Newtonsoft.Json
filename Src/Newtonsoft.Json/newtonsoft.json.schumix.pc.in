@@ -1,0 +1,6 @@
+Name: Newtonsoft.Json.Schumix
+Description: Newtonsoft.Json.Schumix
+Version: 0.1
+
+Requires: 
+Libs: -r:@expanded_libdir@/@PACKAGE@/Newtonsoft.Json.dll
