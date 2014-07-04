@@ -10,7 +10,7 @@ ASSEMBLY = bin/Debug/Schumix/Newtonsoft.Json.dll
 ASSEMBLY_MDB = $(ASSEMBLY).mdb
 COMPILE_TARGET = library
 PROJECT_REFERENCES = 
-BUILD_DIR = bin/Debug/Schumix/
+BUILD_DIR = bin/Debug/Schumix
 
 NEWTONSOFT_JSON_DLL_MDB_SOURCE=bin/Debug/Schumix/Newtonsoft.Json.dll.mdb
 NEWTONSOFT_JSON_DLL_MDB=$(BUILD_DIR)/Newtonsoft.Json.dll.mdb
@@ -24,7 +24,7 @@ ASSEMBLY = bin/Release/Schumix/Newtonsoft.Json.dll
 ASSEMBLY_MDB = 
 COMPILE_TARGET = library
 PROJECT_REFERENCES = 
-BUILD_DIR = bin/Release/Schumix/
+BUILD_DIR = bin/Release/Schumix
 
 NEWTONSOFT_JSON_DLL_MDB=
 
