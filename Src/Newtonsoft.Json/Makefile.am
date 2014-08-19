@@ -78,6 +78,7 @@ FILES = \
 	JsonExtensionDataAttribute.cs \
 	JsonPosition.cs \
 	Linq/JPropertyKeyedCollection.cs \
+	Linq/JsonMergeSettings.cs \
 	Linq/JsonPath/ArrayIndexFilter.cs \
 	Linq/JsonPath/ArrayMultipleIndexFilter.cs \
 	Linq/JsonPath/ArraySliceFilter.cs \
@@ -88,6 +89,7 @@ FILES = \
 	Linq/JsonPath/QueryExpression.cs \
 	Linq/JsonPath/QueryFilter.cs \
 	Linq/JsonPath/ScanFilter.cs \
+	Linq/MergeArrayHandling.cs \
 	MetadataPropertyHandling.cs \
 	Serialization/DiagnosticsTraceWriter.cs \
 	Serialization/ExpressionValueProvider.cs \
@@ -215,7 +217,6 @@ FILES = \
 	Utilities/DictionaryWrapper.cs \
 	Utilities/EnumUtils.cs \
 	Utilities/EnumValue.cs \
-	Utilities/EnumValues.cs \
 	Utilities/JavaScriptUtils.cs \
 	JsonToken.cs \
 	JsonWriter.cs \
