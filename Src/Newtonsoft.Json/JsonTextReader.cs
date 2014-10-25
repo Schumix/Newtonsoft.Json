@@ -1354,11 +1354,11 @@ namespace Newtonsoft.Json
         // the runtime can execute the ParseNumber even if 
         // the System.Numerics.BigInteger.Parse method is
         // missing, which happens in some versions of Mono
-        [MethodImpl(MethodImplOptions.NoInlining)]
+		/*[MethodImpl(MethodImplOptions.NoInlining)] // Mono 2.10.8.1 fix.
         private static object BigIntegerParse(string number, CultureInfo culture)
         {
             return System.Numerics.BigInteger.Parse(number, culture);
-        }
+		}*/
 #endif
 
         private void ParseComment()
