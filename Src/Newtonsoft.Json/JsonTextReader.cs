@@ -1311,7 +1311,7 @@ namespace Newtonsoft.Json
                         if (number.Length > MaximumJavascriptIntegerCharacterLength)
                             throw JsonReaderException.Create(this, "JSON integer {0} is too large to parse.".FormatWith(CultureInfo.InvariantCulture, _stringReference.ToString()));
 
-                        numberValue = BigIntegerParse(number, CultureInfo.InvariantCulture);
+						numberValue = BigIntegerParse(number); // Mono 2.8.1 fix.
                         numberType = JsonToken.Integer;
 #else
                         throw JsonReaderException.Create(this, "JSON integer {0} is too large or small for an Int64.".FormatWith(CultureInfo.InvariantCulture, _stringReference.ToString()));
@@ -1359,6 +1359,13 @@ namespace Newtonsoft.Json
         {
             return System.Numerics.BigInteger.Parse(number, culture);
         }
+
+		// Mono 2.8.1 fix.
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		private static object BigIntegerParse(string number)
+		{
+			return System.Numerics.BigInteger.Parse(number);
+		}
 #endif
 
         private void ParseComment()
