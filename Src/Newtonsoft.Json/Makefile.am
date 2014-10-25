@@ -203,6 +203,7 @@ FILES = \
 	Utilities/ILGeneratorExtensions.cs \
 	Utilities/ImmutableCollectionsUtils.cs \
 	Utilities/LinqBridge.cs \
+	Utilities/PropertyNameTable.cs \
 	Utilities/ReflectionDelegateFactory.cs \
 	Utilities/LateBoundReflectionDelegateFactory.cs \
 	Utilities/MethodCall.cs \
