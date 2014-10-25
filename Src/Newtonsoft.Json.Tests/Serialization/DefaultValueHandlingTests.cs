@@ -32,12 +32,16 @@ using System.Runtime.Serialization.Json;
 #endif
 using System.Text;
 using Newtonsoft.Json.Tests.TestObjects;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Utilities;
 
@@ -99,7 +103,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 Formatting.Indented,
                 new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Include });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Company"": ""Acme Ltd."",
   ""Amount"": 50.0,
   ""Paid"": false,
@@ -126,7 +130,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 Formatting.Indented,
                 new JsonSerializerSettings { });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Company"": ""Acme Ltd."",
   ""Amount"": 50.0,
   ""Paid"": false,
@@ -139,7 +143,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 Formatting.Indented,
                 new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Company"": ""Acme Ltd."",
   ""Amount"": 50.0
 }", ignored);
@@ -295,7 +299,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""IntInclude"": 0,
   ""IntDefault"": 0
 }", json);
@@ -305,7 +309,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 DefaultValueHandling = DefaultValueHandling.Ignore
             });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""IntInclude"": 0
 }", json);
 
@@ -314,7 +318,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 DefaultValueHandling = DefaultValueHandling.Include
             });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""IntInclude"": 0,
   ""IntDefault"": 0
 }", json);

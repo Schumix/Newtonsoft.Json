@@ -37,12 +37,16 @@ using System.Runtime.Serialization;
 using System.Text;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Utilities;
@@ -68,7 +72,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 Assert.AreEqual(null, obj.Member5);
 
                 string json = JsonConvert.SerializeObject(obj, Formatting.Indented);
-                Assert.AreEqual(@"{
+                StringAssert.AreEqual(@"{
   ""Member1"": 11,
   ""Member2"": ""This value went into the data file during serialization."",
   ""Member4"": null
@@ -115,7 +119,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(null, obj.Member4);
 
             string json = JsonConvert.SerializeObject(obj, Formatting.Indented);
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Member1"": 11,
   ""Member2"": ""This value went into the data file during serialization."",
   ""Member4"": null
@@ -151,7 +155,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(null, obj.Member4);
 
             string json = JsonConvert.SerializeObject(obj, Formatting.Indented);
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   -1.0,
   1.1,
   2.222222222,
@@ -189,7 +193,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(null, obj.Member4);
 
             string json = JsonConvert.SerializeObject(obj, Formatting.Indented);
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""1.1"": ""first"",
   ""2.222222222"": ""second"",
   ""2147483647"": ""third"",
@@ -277,12 +281,12 @@ namespace Newtonsoft.Json.Tests.Serialization
             SerializationEventContextSubClassTestObject obj = new SerializationEventContextSubClassTestObject();
 
             string json = JsonConvert.SerializeObject(obj, Formatting.Indented);
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""TestMember"": ""Set!""
 }", json);
         }
 
-#if !(NETFX_CORE || PORTABLE)
+#if !(NETFX_CORE || PORTABLE || ASPNETCORE50)
         public class SerializationEventContextTestObject
         {
             public string TestMember { get; set; }
@@ -307,13 +311,13 @@ namespace Newtonsoft.Json.Tests.Serialization
                         "ContextValue")
             });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""TestMember"": ""Remoting ContextValue""
 }", json);
         }
 #endif
 
-#if !PORTABLE
+#if !(PORTABLE || ASPNETCORE50)
         public void WhenSerializationErrorDetectedBySerializer_ThenCallbackIsCalled()
         {
             // Verify contract is properly finding our callback
@@ -367,7 +371,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             IList<string> e = c.GetEvents();
 
-            Assert.AreEqual(@"OnDeserializing
+            StringAssert.AreEqual(@"OnDeserializing
 OnDeserializing_Derived
 OnDeserialized
 OnDeserialized_Derived
@@ -386,7 +390,7 @@ OnSerialized_Derived", string.Join(Environment.NewLine, e.ToArray()));
 
             IList<string> e = c.GetEvents();
 
-            Assert.AreEqual(@"OnDeserializing
+            StringAssert.AreEqual(@"OnDeserializing
 OnDeserializing_Derived
 OnDeserializing_Derived_Derived
 OnDeserialized
@@ -415,7 +419,7 @@ OnSerialized_Derived_Derived", string.Join(Environment.NewLine, e.ToArray()));
 
             IList<string> e = c.GetEvents();
 
-            Assert.AreEqual(@"OnDeserializing
+            StringAssert.AreEqual(@"OnDeserializing
 OnDeserializing_Derived
 OnDeserializing_Derived_Derived
 OnDeserialized
@@ -442,9 +446,7 @@ OnSerialized_Derived_Derived", string.Join(Environment.NewLine, e.ToArray()));
                 }
             };
 
-            ExceptionAssert.Throws<JsonException>(
-                "Serialization Callback 'Void Deserialized()' in type 'Newtonsoft.Json.Tests.Serialization.Contract' must have a single parameter of type 'System.Runtime.Serialization.StreamingContext'.",
-                () => JsonConvert.SerializeObject(d, Formatting.Indented));
+            ExceptionAssert.Throws<JsonException>(() => JsonConvert.SerializeObject(d, Formatting.Indented), "Serialization Callback 'Void Deserialized()' in type 'Newtonsoft.Json.Tests.Serialization.Contract' must have a single parameter of type 'System.Runtime.Serialization.StreamingContext'.");
         }
     }
 

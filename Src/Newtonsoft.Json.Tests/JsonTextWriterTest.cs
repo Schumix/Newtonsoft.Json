@@ -35,13 +35,20 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
+
+
 using Newtonsoft.Json;
 using System.IO;
 using Newtonsoft.Json.Converters;
@@ -114,7 +121,7 @@ namespace Newtonsoft.Json.Tests
             Assert.IsTrue(ms.CanRead);
         }
 
-#if !(PORTABLE || NETFX_CORE)
+#if !(PORTABLE || ASPNETCORE50 || NETFX_CORE)
         [Test]
         public void WriteIConvertable()
         {
@@ -236,18 +243,16 @@ namespace Newtonsoft.Json.Tests
         [Test]
         public void WriteValueObjectWithUnsupportedValue()
         {
-            ExceptionAssert.Throws<JsonWriterException>(
-                @"Unsupported type: System.Version. Use the JsonSerializer class to get the object's JSON representation. Path ''.",
-                () =>
+            ExceptionAssert.Throws<JsonWriterException>(() =>
+            {
+                StringWriter sw = new StringWriter();
+                using (JsonTextWriter jsonWriter = new JsonTextWriter(sw))
                 {
-                    StringWriter sw = new StringWriter();
-                    using (JsonTextWriter jsonWriter = new JsonTextWriter(sw))
-                    {
-                        jsonWriter.WriteStartArray();
-                        jsonWriter.WriteValue(new Version(1, 1, 1, 1));
-                        jsonWriter.WriteEndArray();
-                    }
-                });
+                    jsonWriter.WriteStartArray();
+                    jsonWriter.WriteValue(new Version(1, 1, 1, 1));
+                    jsonWriter.WriteEndArray();
+                }
+            }, @"Unsupported type: System.Version. Use the JsonSerializer class to get the object's JSON representation. Path ''.");
         }
 
         [Test]
@@ -261,8 +266,7 @@ namespace Newtonsoft.Json.Tests
                 jsonWriter.WriteStartArray();
                 jsonWriter.WriteValue(@"""These pretzels are making me thirsty!""");
                 jsonWriter.WriteValue("Jeff's house was burninated.");
-                jsonWriter.WriteValue(@"1. You don't talk about fight club.
-2. You don't talk about fight club.");
+                jsonWriter.WriteValue("1. You don't talk about fight club.\r\n2. You don't talk about fight club.");
                 jsonWriter.WriteValue("35% of\t statistics\n are made\r up.");
                 jsonWriter.WriteEndArray();
             }
@@ -313,7 +317,7 @@ namespace Newtonsoft.Json.Tests
 }";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -352,7 +356,7 @@ namespace Newtonsoft.Json.Tests
 }";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -404,7 +408,7 @@ namespace Newtonsoft.Json.Tests
 }";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -483,7 +487,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -531,7 +535,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -567,7 +571,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -604,7 +608,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -630,7 +634,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -658,7 +662,7 @@ namespace Newtonsoft.Json.Tests
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -807,7 +811,7 @@ namespace Newtonsoft.Json.Tests
 
             Console.WriteLine(sb.ToString());
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   2147483647,
   -2147483648,
   0,
@@ -824,41 +828,37 @@ namespace Newtonsoft.Json.Tests
         [Test]
         public void BadWriteEndArray()
         {
-            ExceptionAssert.Throws<JsonWriterException>(
-                "No token to close. Path ''.",
-                () =>
+            ExceptionAssert.Throws<JsonWriterException>(() =>
+            {
+                StringBuilder sb = new StringBuilder();
+                StringWriter sw = new StringWriter(sb);
+
+                using (JsonWriter jsonWriter = new JsonTextWriter(sw))
                 {
-                    StringBuilder sb = new StringBuilder();
-                    StringWriter sw = new StringWriter(sb);
+                    jsonWriter.WriteStartArray();
 
-                    using (JsonWriter jsonWriter = new JsonTextWriter(sw))
-                    {
-                        jsonWriter.WriteStartArray();
+                    jsonWriter.WriteValue(0.0);
 
-                        jsonWriter.WriteValue(0.0);
-
-                        jsonWriter.WriteEndArray();
-                        jsonWriter.WriteEndArray();
-                    }
-                });
+                    jsonWriter.WriteEndArray();
+                    jsonWriter.WriteEndArray();
+                }
+            }, "No token to close. Path ''.");
         }
 
         [Test]
         public void InvalidQuoteChar()
         {
-            ExceptionAssert.Throws<ArgumentException>(
-                @"Invalid JavaScript string quote character. Valid quote characters are ' and "".",
-                () =>
-                {
-                    StringBuilder sb = new StringBuilder();
-                    StringWriter sw = new StringWriter(sb);
+            ExceptionAssert.Throws<ArgumentException>(() =>
+            {
+                StringBuilder sb = new StringBuilder();
+                StringWriter sw = new StringWriter(sb);
 
-                    using (JsonTextWriter jsonWriter = new JsonTextWriter(sw))
-                    {
-                        jsonWriter.Formatting = Formatting.Indented;
-                        jsonWriter.QuoteChar = '*';
-                    }
-                });
+                using (JsonTextWriter jsonWriter = new JsonTextWriter(sw))
+                {
+                    jsonWriter.Formatting = Formatting.Indented;
+                    jsonWriter.QuoteChar = '*';
+                }
+            }, @"Invalid JavaScript string quote character. Valid quote characters are ' and "".");
         }
 
         [Test]
@@ -884,17 +884,28 @@ namespace Newtonsoft.Json.Tests
                 Assert.AreEqual('\'', jsonWriter.QuoteChar);
 
                 jsonWriter.WriteStartObject();
+
                 jsonWriter.WritePropertyName("propertyName");
                 jsonWriter.WriteValue(double.NaN);
+
+                jsonWriter.IndentChar = '?';
+                Assert.AreEqual('?', jsonWriter.IndentChar);
+                jsonWriter.Indentation = 6;
+                Assert.AreEqual(6, jsonWriter.Indentation);
+
+                jsonWriter.WritePropertyName("prop2");
+                jsonWriter.WriteValue(123);
+
                 jsonWriter.WriteEndObject();
             }
 
             string expected = @"{
-_____'propertyName': NaN
+_____'propertyName': NaN,
+??????'prop2': 123
 }";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -956,7 +967,7 @@ _____'propertyName': NaN
 ]";
             string result = sb.ToString();
 
-            Assert.AreEqual(expected, result);
+            StringAssert.AreEqual(expected, result);
         }
 
         [Test]
@@ -1010,7 +1021,7 @@ _____'propertyName': NaN
                 Assert.AreEqual("", writer.Path);
             }
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""Property1"": [
       1,
@@ -1177,7 +1188,7 @@ _____'propertyName': NaN
 
             writer.WriteEnd();
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   '2000-01-01T01:01:01Z',
   '2000-01-01T01:01:01+00:00',
   '\/Date(946688461000)\/',
@@ -1208,7 +1219,7 @@ _____'propertyName': NaN
 
             writer.WriteEnd();
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   '2000 a.m.',
   '2000 a.m.'
 ]", sw.ToString());
@@ -1379,7 +1390,7 @@ _____'propertyName': NaN
             writer.WriteEndObject();
             Assert.AreEqual(WriteState.Start, writer.WriteState);
 
-            Assert.AreEqual(@"{{{
+            StringAssert.AreEqual(@"{{{
   ""1ytreporP"": NULL!!!
 }}}", sw.ToString());
         }
@@ -1404,7 +1415,7 @@ _____'propertyName': NaN
                     writer.Close();
                 }
 
-                Assert.AreEqual(@"{
+                StringAssert.AreEqual(@"{
   a: 1
 }", stringWriter.ToString());
             }
@@ -1442,7 +1453,7 @@ null//comment
 
             w.WriteToken(r, true);
 
-            Assert.AreEqual(@"/*comment*//*hi*/*/{/*comment*/
+            StringAssert.AreEqual(@"/*comment*//*hi*/*/{/*comment*/
   ""Name"": /*comment*/ true/*comment after true*//*comment after comma*/,
   ""ExpiryDate"": /*comment*/ new Constructor(
     /*comment*/,
@@ -1516,7 +1527,7 @@ null//comment
         }
     }
 
-#if !(PORTABLE || NETFX_CORE)
+#if !(PORTABLE || ASPNETCORE50 || NETFX_CORE)
     public struct ConvertibleInt : IConvertible
     {
         private readonly int _value;

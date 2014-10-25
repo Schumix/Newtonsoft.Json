@@ -30,12 +30,16 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Utilities;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests.Serialization
@@ -99,17 +103,15 @@ namespace Newtonsoft.Json.Tests.Serialization
   ]
 }";
 
-            ExceptionAssert.Throws<JsonSerializationException>(
-                @"Cannot preserve reference to array or readonly list, or list created from a non-default constructor: System.String[][]. Path '$values', line 3, position 15.",
-                () =>
-                {
-                    JsonConvert.DeserializeObject<string[][]>(json,
-                        new JsonSerializerSettings
-                        {
-                            PreserveReferencesHandling = PreserveReferencesHandling.All,
-                            MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
-                        });
-                });
+            ExceptionAssert.Throws<JsonSerializationException>(() =>
+            {
+                JsonConvert.DeserializeObject<string[][]>(json,
+                    new JsonSerializerSettings
+                    {
+                        PreserveReferencesHandling = PreserveReferencesHandling.All,
+                        MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
+                    });
+            }, @"Cannot preserve reference to array or readonly list, or list created from a non-default constructor: System.String[][]. Path '$values', line 3, position 15.");
         }
 
 #if !NETFX_CORE
@@ -153,7 +155,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string jsonString = JsonConvert.SerializeObject(expected, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""SourceTypeID"": ""d8220a4b-75b1-4b7a-8112-b7bdae956a45"",
   ""BrokerID"": ""951663c4-924e-4c86-a57a-7ed737501dbd"",
   ""Latitude"": 33.657145,
@@ -230,16 +232,14 @@ namespace Newtonsoft.Json.Tests.Serialization
   ""Manager"": null
 }";
 
-            ExceptionAssert.Throws<JsonSerializationException>(
-                "Type specified in JSON 'Newtonsoft.Json.Tests.TestObjects.Employee' was not resolved. Path '$type', line 3, position 56.",
-                () =>
+            ExceptionAssert.Throws<JsonSerializationException>(() =>
+            {
+                JsonConvert.DeserializeObject(json, null, new JsonSerializerSettings
                 {
-                    JsonConvert.DeserializeObject(json, null, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Objects,
-                        MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
-                    });
+                    TypeNameHandling = TypeNameHandling.Objects,
+                    MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
                 });
+            }, "Type specified in JSON 'Newtonsoft.Json.Tests.TestObjects.Employee' was not resolved. Path '$type', line 3, position 56.");
         }
 
         [Test]
@@ -332,7 +332,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.IsTrue(JToken.DeepEquals(t1, t2));
         }
 
-#if !(PORTABLE || PORTABLE40)
+#if !(PORTABLE || ASPNETCORE50 || PORTABLE40)
         [Test]
         public void DeserializeGenericObjectListWithTypeName()
         {
@@ -397,7 +397,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(typeNameProperty, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""Name!"",
   ""Value"": {
     ""$type"": """ + listRef + @""",
@@ -460,7 +460,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(c1, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""$id"": ""Id!"",
   ""$ref"": ""Ref!"",
   ""$value"": ""Value!"",
@@ -537,23 +537,21 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             Assert.AreEqual(5d, actual.Payload);
 
-            ExceptionAssert.Throws<JsonSerializationException>(
-                @"Cannot deserialize the current JSON object (e.g. {""name"":""value""}) into type 'System.Double' because the type requires a JSON primitive value (e.g. string, number, boolean, null) to deserialize correctly.
-To fix this error either change the JSON to a JSON primitive value (e.g. string, number, boolean, null) or change the deserialized type so that it is a normal .NET type (e.g. not a primitive type like integer, not a collection type like an array or List<T>) that can be deserialized from a JSON object. JsonObjectAttribute can also be added to the type to force it to deserialize from a JSON object.
-Path 'Payload.$type', line 3, position 13.",
-                () =>
-                {
-                    JsonConvert.DeserializeObject<ItemWithTypedPayload>(@"{
+            ExceptionAssert.Throws<JsonSerializationException>(() =>
+            {
+                JsonConvert.DeserializeObject<ItemWithTypedPayload>(@"{
   ""Payload"": {
     ""$type"": ""System.Double, mscorlib"",
     ""$value"": ""5""
   }
 }",
-                        new JsonSerializerSettings
-                        {
-                            MetadataPropertyHandling = MetadataPropertyHandling.Ignore
-                        });
-                });
+                    new JsonSerializerSettings
+                    {
+                        MetadataPropertyHandling = MetadataPropertyHandling.Ignore
+                    });
+            }, @"Cannot deserialize the current JSON object (e.g. {""name"":""value""}) into type 'System.Double' because the type requires a JSON primitive value (e.g. string, number, boolean, null) to deserialize correctly.
+To fix this error either change the JSON to a JSON primitive value (e.g. string, number, boolean, null) or change the deserialized type so that it is a normal .NET type (e.g. not a primitive type like integer, not a collection type like an array or List<T>) that can be deserialized from a JSON object. JsonObjectAttribute can also be added to the type to force it to deserialize from a JSON object.
+Path 'Payload.$type', line 3, position 13.");
         }
 
         [Test]

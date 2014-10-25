@@ -23,15 +23,19 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
 using System;
 using Newtonsoft.Json.Converters;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
@@ -44,8 +48,7 @@ namespace Newtonsoft.Json.Tests.Converters
         [Test]
         public void DeserializeInvalidDataTable()
         {
-            ExceptionAssert.Throws<JsonException>("Unexpected JSON token when reading DataTable. Expected StartArray, got Integer. Path 'pending_count', line 1, position 19.",
-                () => JsonConvert.DeserializeObject<DataSet>("{\"pending_count\":23,\"completed_count\":45}"));
+            ExceptionAssert.Throws<JsonException>(() => JsonConvert.DeserializeObject<DataSet>("{\"pending_count\":23,\"completed_count\":45}"), "Unexpected JSON token when reading DataTable. Expected StartArray, got Integer. Path 'pending_count', line 1, position 19.");
         }
 
         [Test]
@@ -73,7 +76,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             string json = JsonConvert.SerializeObject(dataSet, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Table1"": [
     {
       ""id"": 0,
@@ -144,7 +147,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             DataSet deserializedDs = JsonConvert.DeserializeObject<DataSet>(json, new IsoDateTimeConverter());
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""FirstTable"": [
     {
       ""StringCol"": ""Item Name"",
@@ -297,7 +300,7 @@ namespace Newtonsoft.Json.Tests.Converters
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""firstTable"": [
     {
       ""stringCol"": ""Item Name"",
@@ -347,7 +350,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             string json = JsonConvert.SerializeObject(c, Formatting.Indented, new IsoDateTimeConverter());
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Before"": ""Before"",
   ""Set"": {
     ""FirstTable"": [
@@ -418,7 +421,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             string json = JsonConvert.SerializeObject(ds, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Customers"": [
     {
       ""CustomerID"": ""234""
@@ -435,7 +438,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             string json1 = JsonConvert.SerializeObject(ds1, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Customers"": [
     {
       ""CustomerID"": ""234""

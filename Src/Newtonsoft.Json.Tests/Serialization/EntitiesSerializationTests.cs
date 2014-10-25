@@ -23,21 +23,24 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+#if !(NET35 || NET20 || NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
 using Newtonsoft.Json.Serialization;
-#if !(NET35 || NET20 || NETFX_CORE || PORTABLE || PORTABLE40)
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Converters;
-#if !NETFX_CORE
-using NUnit.Framework;
-
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests.Serialization
@@ -123,7 +126,7 @@ namespace Newtonsoft.Json.Tests.Serialization
   }
 }";
 
-            Assert.AreEqual(expected, json);
+            StringAssert.AreEqual(expected, json);
         }
 
         [Test]
@@ -213,7 +216,7 @@ namespace Newtonsoft.Json.Tests.Serialization
   }
 }";
 
-            Assert.AreEqual(expected, json);
+            StringAssert.AreEqual(expected, json);
         }
 
         [Test]
@@ -337,7 +340,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(e, settings);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""$id"": ""1"",
   ""entitySetName"": ""Folder"",
   ""entityContainerName"": ""DataServicesTestDatabaseEntities"",
@@ -401,7 +404,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(e, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""$id"": ""1"",
   ""EntitySetName"": ""Folder"",
   ""EntityContainerName"": ""DataServicesTestDatabaseEntities"",

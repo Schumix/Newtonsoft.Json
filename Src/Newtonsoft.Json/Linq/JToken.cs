@@ -188,7 +188,7 @@ namespace Newtonsoft.Json.Linq
                 IList<JToken> ancestors = Ancestors().Reverse().ToList();
                 ancestors.Add(this);
 
-                StringBuilder sb = new StringBuilder();
+                IList<JsonPosition> positions = new List<JsonPosition>();
                 for (int i = 0; i < ancestors.Count; i++)
                 {
                     JToken current = ancestors[i];
@@ -204,25 +204,19 @@ namespace Newtonsoft.Json.Linq
                         {
                             case JTokenType.Property:
                                 JProperty property = (JProperty)current;
-
-                                if (sb.Length > 0)
-                                    sb.Append('.');
-
-                                sb.Append(property.Name);
+                                positions.Add(new JsonPosition(JsonContainerType.Object) { PropertyName = property.Name });
                                 break;
                             case JTokenType.Array:
                             case JTokenType.Constructor:
                                 int index = ((IList<JToken>)current).IndexOf(next);
 
-                                sb.Append('[');
-                                sb.Append(index);
-                                sb.Append(']');
+                                positions.Add(new JsonPosition(JsonContainerType.Array) { Position = index });
                                 break;
                         }
                     }
                 }
 
-                return sb.ToString();
+                return JsonPosition.BuildPath(positions);
             }
         }
 
@@ -1701,7 +1695,21 @@ namespace Newtonsoft.Json.Linq
         {
             if (JsonConvert.DefaultSettings == null)
             {
-                PrimitiveTypeCode typeCode = ConvertUtils.GetTypeCode(objectType);
+                bool isEnum;
+                PrimitiveTypeCode typeCode = ConvertUtils.GetTypeCode(objectType, out isEnum);
+
+                if (isEnum && Type == JTokenType.String)
+                {
+                    Type enumType = objectType.IsEnum() ? objectType : Nullable.GetUnderlyingType(objectType);
+                    try
+                    {
+                        return Enum.Parse(enumType, (string)this, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ArgumentException("Could not convert '{0}' to {1}.".FormatWith(CultureInfo.InvariantCulture, (string)this, enumType.Name), ex);
+                    }
+                }
 
                 switch (typeCode)
                 {

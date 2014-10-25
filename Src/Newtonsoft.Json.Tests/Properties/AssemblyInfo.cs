@@ -42,7 +42,6 @@ using System.Security;
 #elif NET40
 [assembly: AssemblyTitle("Json.NET Tests .NET 4.0")]
 #else
-
 [assembly: AssemblyTitle("Json.NET Tests")]
 #endif
 
@@ -75,4 +74,4 @@ using System.Security;
 // by using the '*' as shown below:
 
 [assembly: AssemblyVersion("6.0.0.0")]
-[assembly: AssemblyFileVersion("6.0.4.17603")]
+[assembly: AssemblyFileVersion("6.0.6.17820")]

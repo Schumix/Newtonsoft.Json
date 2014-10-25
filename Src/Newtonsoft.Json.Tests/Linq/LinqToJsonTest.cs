@@ -24,14 +24,19 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -49,6 +54,44 @@ namespace Newtonsoft.Json.Tests.Linq
     [TestFixture]
     public class LinqToJsonTest : TestFixtureBase
     {
+        [Test]
+        public void EmptyJEnumerableCount()
+        {
+            JEnumerable<JToken> tokens = new JEnumerable<JToken>();
+
+            Assert.AreEqual(0, tokens.Count());
+        }
+
+        [Test]
+        public void EmptyJEnumerableAsEnumerable()
+        {
+            IEnumerable tokens = new JEnumerable<JToken>();
+
+            Assert.AreEqual(0, tokens.Cast<JToken>().Count());
+        }
+
+        [Test]
+        public void EmptyJEnumerableEquals()
+        {
+            JEnumerable<JToken> tokens1 = new JEnumerable<JToken>();
+            JEnumerable<JToken> tokens2 = new JEnumerable<JToken>();
+
+            Assert.IsTrue(tokens1.Equals(tokens2));
+
+            object o1 = new JEnumerable<JToken>();
+            object o2 = new JEnumerable<JToken>();
+
+            Assert.IsTrue(o1.Equals(o2));
+        }
+
+        [Test]
+        public void EmptyJEnumerableGetHashCode()
+        {
+            JEnumerable<JToken> tokens = new JEnumerable<JToken>();
+
+            Assert.AreEqual(0, tokens.GetHashCode());
+        }
+
         [Test]
         public void CommentsAndReadFrom()
         {
@@ -120,8 +163,7 @@ undefined
             jsonReader.Read();
             jsonReader.Read();
 
-            ExceptionAssert.Throws<JsonReaderException>(@"Error reading JToken from JsonReader. Unexpected token: EndArray. Path '', line 1, position 2.",
-                () => JToken.ReadFrom(jsonReader));
+            ExceptionAssert.Throws<JsonReaderException>(() => JToken.ReadFrom(jsonReader), @"Error reading JToken from JsonReader. Unexpected token: EndArray. Path '', line 1, position 2.");
         }
 
         [Test]
@@ -140,6 +182,55 @@ undefined
 
             JContainer idProperty = o["person"]["$id"].Parent;
             Assert.AreEqual("person.$id", idProperty.Path);
+        }
+
+        [Test]
+        public void EscapedPath()
+        {
+            string json = @"{
+  ""frameworks"": {
+    ""aspnetcore50"": {
+      ""dependencies"": {
+        ""System.Xml.ReaderWriter"": {
+          ""source"": ""NuGet""
+        }
+      }
+    }
+  }
+}";
+
+            JObject o = JObject.Parse(json);
+
+            JToken v1 = o["frameworks"]["aspnetcore50"]["dependencies"]["System.Xml.ReaderWriter"]["source"];
+
+            Console.WriteLine(v1.Path);
+
+            JToken v2 = o.SelectToken(v1.Path);
+
+            Assert.AreEqual(v1, v2);
+        }
+
+        [Test]
+        public void EscapedPathTests()
+        {
+            EscapedPathAssert("this has spaces", "['this has spaces']");
+            EscapedPathAssert("(RoundBraces)", "['(RoundBraces)']");
+            EscapedPathAssert("[SquareBraces]", "['[SquareBraces]']");
+            EscapedPathAssert("this.has.dots", "['this.has.dots']");
+        }
+
+        private void EscapedPathAssert(string propertyName, string expectedPath)
+        {
+            int v1 = int.MaxValue;
+            JValue value = new JValue(v1);
+
+            JObject o = new JObject(new JProperty(propertyName, value));
+
+            Assert.AreEqual(expectedPath, value.Path);
+
+            JValue selectedValue = (JValue)o.SelectToken(value.Path);
+
+            Assert.AreEqual(value, selectedValue);
         }
 
         [Test]
@@ -361,7 +452,7 @@ keyword such as type of business.""
 
             JObject o = JObject.Parse(json);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""CPU"": ""Intel"",
   ""Drives"": [
     ""DVD read/writer"",
@@ -371,7 +462,7 @@ keyword such as type of business.""
 
             JArray list = o.Value<JArray>("Drives");
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   ""DVD read/writer"",
   ""500 gigabyte hard drive""
 ]", list.ToString());
@@ -380,7 +471,7 @@ keyword such as type of business.""
             Assert.AreEqual(@"""CPU"": ""Intel""", cpuProperty.ToString());
 
             JProperty drivesProperty = o.Property("Drives");
-            Assert.AreEqual(@"""Drives"": [
+            StringAssert.AreEqual(@"""Drives"": [
   ""DVD read/writer"",
   ""500 gigabyte hard drive""
 ]", drivesProperty.ToString());
@@ -393,10 +484,10 @@ keyword such as type of business.""
 
             JObject o = JObject.Parse(json);
 
-            Assert.AreEqual(@"""Establised"": new Date(
+            StringAssert.AreEqual(@"""Establised"": new Date(
   1264118400000
 )", o.Property("Establised").ToString());
-            Assert.AreEqual(@"new Date(
+            StringAssert.AreEqual(@"new Date(
   1264118400000
 )", o.Property("Establised").Value.ToString());
             Assert.AreEqual(@"""Width"": 1.1", o.Property("Width").ToString());
@@ -407,7 +498,7 @@ keyword such as type of business.""
             json = @"[null,undefined]";
 
             JArray a = JArray.Parse(json);
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   null,
   undefined
 ]", a.ToString());
@@ -428,7 +519,7 @@ keyword such as type of business.""
 
             Assert.AreEqual(4, o.Properties().Count());
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Test1"": ""Test1Value"",
   ""Test2"": ""Test2Value"",
   ""Test3"": ""Test3Value"",
@@ -455,7 +546,7 @@ keyword such as type of business.""
                     );
 
             Assert.AreEqual(5, a.Count());
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""Test1"": ""Test1Value"",
     ""Test2"": ""Test2Value"",
@@ -532,7 +623,7 @@ keyword such as type of business.""
             //   ]
             // }
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Title"": ""How to use FromObject - Super effective!"",
   ""Description"": null,
   ""Link"": null,
@@ -711,34 +802,31 @@ keyword such as type of business.""
         [Test]
         public void JObjectIntIndex()
         {
-            ExceptionAssert.Throws<ArgumentException>("Accessed JObject values with invalid key value: 0. Object property name expected.",
-                () =>
-                {
-                    JObject o = new JObject();
-                    Assert.AreEqual(null, o[0]);
-                });
+            ExceptionAssert.Throws<ArgumentException>(() =>
+            {
+                JObject o = new JObject();
+                Assert.AreEqual(null, o[0]);
+            }, "Accessed JObject values with invalid key value: 0. Object property name expected.");
         }
 
         [Test]
         public void JArrayStringIndex()
         {
-            ExceptionAssert.Throws<ArgumentException>(@"Accessed JArray values with invalid key value: ""purple"". Array position index expected.",
-                () =>
-                {
-                    JArray a = new JArray();
-                    Assert.AreEqual(null, a["purple"]);
-                });
+            ExceptionAssert.Throws<ArgumentException>(() =>
+            {
+                JArray a = new JArray();
+                Assert.AreEqual(null, a["purple"]);
+            }, @"Accessed JArray values with invalid key value: ""purple"". Array position index expected.");
         }
 
         [Test]
         public void JConstructorStringIndex()
         {
-            ExceptionAssert.Throws<ArgumentException>(@"Accessed JConstructor values with invalid key value: ""purple"". Argument position index expected.",
-                () =>
-                {
-                    JConstructor c = new JConstructor("ConstructorValue");
-                    Assert.AreEqual(null, c["purple"]);
-                });
+            ExceptionAssert.Throws<ArgumentException>(() =>
+            {
+                JConstructor c = new JConstructor("ConstructorValue");
+                Assert.AreEqual(null, c["purple"]);
+            }, @"Accessed JConstructor values with invalid key value: ""purple"". Argument position index expected.");
         }
 
 #if !NET20
@@ -762,7 +850,7 @@ keyword such as type of business.""
 
             string json = sw.ToString();
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Test1"": new Date(
     971586305000
   ),
@@ -999,7 +1087,7 @@ keyword such as type of business.""
             UriGuidTimeSpanTestClass c1 = new UriGuidTimeSpanTestClass();
             JObject o = JObject.FromObject(c1);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Guid"": ""00000000-0000-0000-0000-000000000000"",
   ""NullableGuid"": null,
   ""TimeSpan"": ""00:00:00"",
@@ -1028,7 +1116,7 @@ keyword such as type of business.""
             };
             JObject o = JObject.FromObject(c1);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Guid"": ""1924129c-f7e0-40f3-9607-9939c531395a"",
   ""NullableGuid"": ""9e9f3adf-e017-4f72-91e0-617ebe85967d"",
   ""TimeSpan"": ""1.00:00:00"",
@@ -1065,13 +1153,12 @@ keyword such as type of business.""
             IDictionary<string, string> users = new Dictionary<string, string>();
 
             // unfortunatly there doesn't appear to be a way around this
-            ExceptionAssert.Throws<Microsoft.CSharp.RuntimeBinder.RuntimeBinderException>("The best overloaded method match for 'System.Collections.Generic.IDictionary<string,string>.Add(string, string)' has some invalid arguments",
-                () =>
-                {
-                    users.Add("name2", name);
+            ExceptionAssert.Throws<Microsoft.CSharp.RuntimeBinder.RuntimeBinderException>(() =>
+            {
+                users.Add("name2", name);
 
-                    Assert.AreEqual(users["name2"], "Matthew Doig");
-                });
+                Assert.AreEqual(users["name2"], "Matthew Doig");
+            }, "The best overloaded method match for 'System.Collections.Generic.IDictionary<string,string>.Add(string, string)' has some invalid arguments");
         }
 #endif
     }

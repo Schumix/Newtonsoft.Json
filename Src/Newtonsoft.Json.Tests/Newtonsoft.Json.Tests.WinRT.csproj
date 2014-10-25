@@ -15,7 +15,8 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>Newtonsoft.Json.Tests.WinRT_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>AEA73E2A196157405965DDB6EC14CE11CEE9A331</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>3116117C65F73A227A0BDC35F584F04145BA4BB7</PackageCertificateThumbprint>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -121,10 +122,12 @@
     <Compile Include="Converters\CustomCreationConverterTests.cs" />
     <Compile Include="Converters\DataSetConverterTests.cs" />
     <Compile Include="Converters\DataTableConverterTests.cs" />
+    <Compile Include="Converters\DiscriminatedUnionConverterTests.cs" />
     <Compile Include="Converters\ExpandoObjectConverterTests.cs" />
     <Compile Include="Converters\IsoDateTimeConverterTests.cs" />
     <Compile Include="Converters\JavaScriptDateTimeConverterTests.cs" />
     <Compile Include="Converters\JsonValueConverterTests.cs" />
+    <Compile Include="Converters\KeyValuePairConverterTests.cs" />
     <Compile Include="Converters\ObjectIdConverterTests.cs" />
     <Compile Include="Converters\RegexConverterTests.cs" />
     <Compile Include="Converters\StringEnumConverterTests.cs" />
@@ -213,6 +216,7 @@
     <Compile Include="TestObjects\ConverableMembers.cs" />
     <Compile Include="TestObjects\ConverterPrecedenceClass.cs" />
     <Compile Include="TestObjects\ConverterPrecedenceClassConverter.cs" />
+    <Compile Include="TestObjects\Currency.cs" />
     <Compile Include="TestObjects\CustomerDataSet.cs" />
     <Compile Include="TestObjects\DataContractSerializationAttributesClass.cs" />
     <Compile Include="TestObjects\DateTimeErrorObjectCollection.cs" />
@@ -302,6 +306,7 @@
     <Compile Include="TestObjects\SerializationEventTestObjectWithConstructor.cs" />
     <Compile Include="TestObjects\SetOnlyPropertyClass.cs" />
     <Compile Include="TestObjects\SetOnlyPropertyClass2.cs" />
+    <Compile Include="TestObjects\Shape.cs" />
     <Compile Include="TestObjects\Shortie.cs" />
     <Compile Include="TestObjects\Store.cs" />
     <Compile Include="TestObjects\StoreColor.cs" />
@@ -327,6 +332,7 @@
     <Compile Include="Utilities\DateTimeUtilsTests.cs" />
     <Compile Include="Utilities\DynamicReflectionDelegateFactoryTests.cs" />
     <Compile Include="Utilities\ExpressionReflectionDelegateFactoryTests.cs" />
+    <Compile Include="Utilities\LateboundReflectionDelegateFactoryTests.cs" />
     <Compile Include="Utilities\ReflectionUtilsTests.cs" />
     <Compile Include="Utilities\StringUtilsTests.cs" />
   </ItemGroup>
@@ -365,11 +371,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="large.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Newtonsoft.Json.Tests.WinRT_TemporaryKey.pfx" />
+    <Content Include="SpaceShipV2.bson">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Collections.Immutable">
       <HintPath>..\packages\Microsoft.Bcl.Immutable.1.1.20-beta\lib\portable-net45+win8\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">

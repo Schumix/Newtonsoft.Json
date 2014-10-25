@@ -27,15 +27,19 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
 using System;
 using System.Collections.Generic;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 #if !NETFX_CORE
 using System.Data;
@@ -97,17 +101,17 @@ namespace Newtonsoft.Json.Tests.Converters
             Assert.AreEqual(2, deserializedDataTable.Rows.Count);
 
             DataRow dr1 = deserializedDataTable.Rows[0];
-            Assert.AreEqual(0, dr1["id"]);
+            Assert.AreEqual(0L, dr1["id"]);
             Assert.AreEqual("item 0", dr1["item"]);
             Assert.AreEqual("0!", ((DataTable)dr1["DataTableCol"]).Rows[0]["NestedStringCol"]);
-            Assert.AreEqual(0, ((long[])dr1["ArrayCol"])[0]);
+            Assert.AreEqual(0L, ((long[])dr1["ArrayCol"])[0]);
             Assert.AreEqual(new DateTime(2000, 12, 29, 0, 0, 0, DateTimeKind.Utc), dr1["DateCol"]);
 
             DataRow dr2 = deserializedDataTable.Rows[1];
-            Assert.AreEqual(1, dr2["id"]);
+            Assert.AreEqual(1L, dr2["id"]);
             Assert.AreEqual("item 1", dr2["item"]);
             Assert.AreEqual("1!", ((DataTable)dr2["DataTableCol"]).Rows[0]["NestedStringCol"]);
-            Assert.AreEqual(1, ((long[])dr2["ArrayCol"])[0]);
+            Assert.AreEqual(1L, ((long[])dr2["ArrayCol"])[0]);
             Assert.AreEqual(new DateTime(2000, 12, 29, 0, 0, 0, DateTimeKind.Utc), dr2["DateCol"]);
         }
 
@@ -220,7 +224,7 @@ namespace Newtonsoft.Json.Tests.Converters
             myTable.Rows.Add(myNewRow);
 
             string json = JsonConvert.SerializeObject(myTable, Formatting.Indented);
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""StringCol"": ""Item Name"",
     ""Int32Col"": 2147483647,
@@ -293,7 +297,7 @@ namespace Newtonsoft.Json.Tests.Converters
             serializer.Serialize(bw, table);
 
             JToken o = JToken.ReadFrom(new BsonReader(new MemoryStream(ms.ToArray())) { ReadRootValueAsArray = true });
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""data"": ""SGVsbG8gd29ybGQh"",
     ""id"": ""ede9a599-a7d9-44a9-9243-7c287049dd20""
@@ -404,7 +408,7 @@ namespace Newtonsoft.Json.Tests.Converters
             KeyValuePair<DataTable, int> pair = new KeyValuePair<DataTable, int>(table, 1);
             string serializedpair = JsonConvert.SerializeObject(pair, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Key"": [
     {
       ""id"": 0,
@@ -430,7 +434,7 @@ namespace Newtonsoft.Json.Tests.Converters
 
             string json = JsonConvert.SerializeObject(dt, Formatting.Indented);
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""CustomerID"": ""432""
   }

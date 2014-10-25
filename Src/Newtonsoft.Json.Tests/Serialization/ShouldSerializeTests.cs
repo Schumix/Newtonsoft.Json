@@ -29,12 +29,16 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json.Serialization;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests.Serialization
@@ -145,14 +149,14 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Age"": 27
 }", json);
 
             c._shouldSerializeName = true;
             json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""James"",
   ""Age"": 27
 }", json);
@@ -199,7 +203,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Age"": 27
 }", json);
 
@@ -217,7 +221,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             c.FavoriteNumber = 23;
             json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""James"",
   ""Age"": 27,
   ""Weight"": 0,
@@ -356,7 +360,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(joe, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Age"": 100,
   ""Name"": ""Joe Employee"",
   ""Manager"": {

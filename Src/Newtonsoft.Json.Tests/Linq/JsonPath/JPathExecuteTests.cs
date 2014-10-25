@@ -30,12 +30,16 @@ using System.Numerics;
 #endif
 using Newtonsoft.Json.Linq.JsonPath;
 using Newtonsoft.Json.Tests.Bson;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Linq;
 #if NET20
@@ -204,9 +208,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             JObject o = new JObject(
                 new JProperty("Blah", 1));
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Index 1 not valid on JObject.",
-                () => { o.SelectToken("[1]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { o.SelectToken("[1]", true); }, @"Index 1 not valid on JObject.");
         }
 
         [Test]
@@ -215,9 +217,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             JObject o = new JObject(
                 new JProperty("Blah", 1));
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Index * not valid on JObject.",
-                () => { o.SelectToken("[*]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { o.SelectToken("[*]", true); }, @"Index * not valid on JObject.");
         }
 
         [Test]
@@ -226,9 +226,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             JObject o = new JObject(
                 new JProperty("Blah", 1));
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Array slice is not valid on JObject.",
-                () => { o.SelectToken("[:]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { o.SelectToken("[:]", true); }, @"Array slice is not valid on JObject.");
         }
 
         [Test]
@@ -245,9 +243,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Path returned multiple tokens.",
-                () => { a.SelectToken("[0, 1]"); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[0, 1]"); }, @"Path returned multiple tokens.");
         }
 
         [Test]
@@ -255,9 +251,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Property 'BlahBlah' not valid on JArray.",
-                () => { a.SelectToken("BlahBlah", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("BlahBlah", true); }, @"Property 'BlahBlah' not valid on JArray.");
         }
 
         [Test]
@@ -265,9 +259,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Index 9 outside the bounds of JArray.",
-                () => { a.SelectToken("[9,10]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[9,10]", true); }, @"Index 9 outside the bounds of JArray.");
         }
 
         [Test]
@@ -275,9 +267,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JConstructor c = new JConstructor("Blah");
 
-            ExceptionAssert.Throws<JsonException>(
-                @"Index 1 outside the bounds of JConstructor.",
-                () => { c.SelectToken("[1]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { c.SelectToken("[1]", true); }, @"Index 1 outside the bounds of JConstructor.");
         }
 
         [Test]
@@ -294,9 +284,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             JObject o = new JObject(
                 new JProperty("Blah", 1));
 
-            ExceptionAssert.Throws<JsonException>(
-                "Property 'Missing' does not exist on JObject.",
-                () => { o.SelectToken("Missing", true); });
+            ExceptionAssert.Throws<JsonException>(() => { o.SelectToken("Missing", true); }, "Property 'Missing' does not exist on JObject.");
         }
 
         [Test]
@@ -315,9 +303,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             JObject o = new JObject(
                 new JProperty("Blah", 1));
 
-            ExceptionAssert.Throws<JsonException>(
-                "Property 'Missing' does not exist on JObject.",
-                () => { o.SelectToken("['Missing','Missing2']", true); });
+            ExceptionAssert.Throws<JsonException>(() => { o.SelectToken("['Missing','Missing2']", true); }, "Property 'Missing' does not exist on JObject.");
         }
 
         [Test]
@@ -325,9 +311,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                "Properties 'Missing', 'Missing2' not valid on JArray.",
-                () => { a.SelectToken("['Missing','Missing2']", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("['Missing','Missing2']", true); }, "Properties 'Missing', 'Missing2' not valid on JArray.");
         }
 
         [Test]
@@ -335,23 +319,15 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                "Array slice of 99 to * returned no results.",
-                () => { a.SelectToken("[99:]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[99:]", true); }, "Array slice of 99 to * returned no results.");
 
-            ExceptionAssert.Throws<JsonException>(
-                "Array slice of 1 to -19 returned no results.",
-                () => { a.SelectToken("[1:-19]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[1:-19]", true); }, "Array slice of 1 to -19 returned no results.");
 
-            ExceptionAssert.Throws<JsonException>(
-                "Array slice of * to -19 returned no results.",
-                () => { a.SelectToken("[:-19]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[:-19]", true); }, "Array slice of * to -19 returned no results.");
 
             a = new JArray();
 
-            ExceptionAssert.Throws<JsonException>(
-                "Array slice of * to * returned no results.",
-                () => { a.SelectToken("[:]", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[:]", true); }, "Array slice of * to * returned no results.");
         }
 
         [Test]
@@ -368,9 +344,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         {
             JArray a = new JArray(1, 2, 3, 4, 5);
 
-            ExceptionAssert.Throws<JsonException>(
-                "Index 1000 outside the bounds of JArray.",
-                () => { a.SelectToken("[1000].Ha", true); });
+            ExceptionAssert.Throws<JsonException>(() => { a.SelectToken("[1000].Ha", true); }, "Index 1000 outside the bounds of JArray.");
         }
 
         [Test]
@@ -631,7 +605,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             Assert.IsTrue(JToken.DeepEquals(new JObject(new JProperty("hi", 3)), t[1]));
         }
 
-#if !(PORTABLE || PORTABLE40 || NET35 || NET20)
+#if !(PORTABLE || ASPNETCORE50 || PORTABLE40 || NET35 || NET20)
         [Test]
         public void GreaterQueryBigInteger()
         {

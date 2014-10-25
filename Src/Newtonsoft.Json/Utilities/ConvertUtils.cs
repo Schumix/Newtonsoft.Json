@@ -162,7 +162,7 @@ namespace Newtonsoft.Json.Utilities
             };
 
 #if !(NETFX_CORE || PORTABLE)
-        private static readonly List<TypeInformation> PrimitiveTypeCodes = new List<TypeInformation>
+        private static readonly TypeInformation[] PrimitiveTypeCodes =
         {
             new TypeInformation { Type = typeof(object), TypeCode = PrimitiveTypeCode.Empty },
             new TypeInformation { Type = typeof(object), TypeCode = PrimitiveTypeCode.Object },
@@ -188,12 +188,24 @@ namespace Newtonsoft.Json.Utilities
 
         public static PrimitiveTypeCode GetTypeCode(Type t)
         {
+            bool isEnum;
+            return GetTypeCode(t, out isEnum);
+        }
+
+        public static PrimitiveTypeCode GetTypeCode(Type t, out bool isEnum)
+        {
             PrimitiveTypeCode typeCode;
             if (TypeCodeMap.TryGetValue(t, out typeCode))
+            {
+                isEnum = false;
                 return typeCode;
+            }
 
             if (t.IsEnum())
+            {
+                isEnum = true;
                 return GetTypeCode(Enum.GetUnderlyingType(t));
+            }
 
             // performance?
             if (ReflectionUtils.IsNullableType(t))
@@ -202,16 +214,13 @@ namespace Newtonsoft.Json.Utilities
                 if (nonNullable.IsEnum())
                 {
                     Type nullableUnderlyingType = typeof(Nullable<>).MakeGenericType(Enum.GetUnderlyingType(nonNullable));
+                    isEnum = true;
                     return GetTypeCode(nullableUnderlyingType);
                 }
             }
 
+            isEnum = false;
             return PrimitiveTypeCode.Object;
-        }
-
-        public static PrimitiveTypeCode GetTypeCode(object o)
-        {
-            return GetTypeCode(o.GetType());
         }
 
 #if !(NETFX_CORE || PORTABLE)
@@ -623,7 +632,7 @@ namespace Newtonsoft.Json.Utilities
 
         public static bool IsInteger(object value)
         {
-            switch (GetTypeCode(value))
+            switch (GetTypeCode(value.GetType()))
             {
                 case PrimitiveTypeCode.SByte:
                 case PrimitiveTypeCode.Byte:

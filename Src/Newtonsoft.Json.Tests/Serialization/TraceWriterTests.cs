@@ -4,18 +4,22 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using Newtonsoft.Json.Linq;
-#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
 using System.Numerics;
 #endif
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
-#if !NETFX_CORE
-using NUnit.Framework;
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -39,7 +43,7 @@ namespace Newtonsoft.Json.Tests.Serialization
     [TestFixture]
     public class TraceWriterTests : TestFixtureBase
     {
-#if !(PORTABLE || NETFX_CORE || PORTABLE40)
+#if !(PORTABLE || ASPNETCORE50 || NETFX_CORE || PORTABLE40)
         [Test]
         public void DiagnosticsTraceWriterTest()
         {
@@ -58,7 +62,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 traceWriter.Trace(TraceLevel.Error, "Error!", null);
                 traceWriter.Trace(TraceLevel.Off, "Off!", null);
 
-                Assert.AreEqual(@"Newtonsoft.Json Verbose: 0 : Verbose!
+                StringAssert.AreEqual(@"Newtonsoft.Json Verbose: 0 : Verbose!
 Newtonsoft.Json Information: 0 : Info!
 Newtonsoft.Json Warning: 0 : Warning!
 Newtonsoft.Json Error: 0 : Error!
@@ -110,6 +114,9 @@ Newtonsoft.Json Error: 0 : Error!
     ""Administrator""
   ]
 }";
+
+            json = StringAssert.Normalize(json);
+            output = StringAssert.Normalize(output);
 
             Assert.IsTrue(output.Contains(json));
         }
@@ -166,6 +173,9 @@ Newtonsoft.Json Error: 0 : Error!
 
             Assert.AreEqual(1059, output.Length);
             Assert.AreEqual(7, memoryTraceWriter.GetTraceMessages().Count());
+
+            json = StringAssert.Normalize(json);
+            output = StringAssert.Normalize(output);
 
             Assert.IsTrue(output.Contains(json));
         }
@@ -360,17 +370,15 @@ Newtonsoft.Json Error: 0 : Error!
                 LevelFilter = TraceLevel.Info
             };
 
-            ExceptionAssert.Throws<Exception>(
-                "Could not convert string to integer: hi. Path 'Integer', line 1, position 15.",
-                () =>
-                {
-                    JsonConvert.DeserializeObject<IntegerTestClass>(
-                        json,
-                        new JsonSerializerSettings
-                        {
-                            TraceWriter = traceWriter
-                        });
-                });
+            ExceptionAssert.Throws<Exception>(() =>
+            {
+                JsonConvert.DeserializeObject<IntegerTestClass>(
+                    json,
+                    new JsonSerializerSettings
+                    {
+                        TraceWriter = traceWriter
+                    });
+            }, "Could not convert string to integer: hi. Path 'Integer', line 1, position 15.");
 
             Assert.AreEqual(2, traceWriter.TraceRecords.Count);
 
@@ -391,17 +399,15 @@ Newtonsoft.Json Error: 0 : Error!
                 LevelFilter = TraceLevel.Info
             };
 
-            ExceptionAssert.Throws<Exception>(
-                "Could not convert string to integer: two. Path 'IntList[1]', line 1, position 20.",
-                () =>
-                {
-                    JsonConvert.DeserializeObject<TraceTestObject>(
-                        json,
-                        new JsonSerializerSettings
-                        {
-                            TraceWriter = traceWriter
-                        });
-                });
+            ExceptionAssert.Throws<Exception>(() =>
+            {
+                JsonConvert.DeserializeObject<TraceTestObject>(
+                    json,
+                    new JsonSerializerSettings
+                    {
+                        TraceWriter = traceWriter
+                    });
+            }, "Could not convert string to integer: two. Path 'IntList[1]', line 1, position 20.");
 
             Assert.AreEqual(3, traceWriter.TraceRecords.Count);
 
@@ -600,7 +606,7 @@ Newtonsoft.Json Error: 0 : Error!
             Assert.IsTrue(traceWriter.TraceRecords[9].Message.StartsWith("Finished deserializing System.Collections.Generic.List`1[System.Object]. Path '$values'"));
         }
 
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
         [Test]
         public void DeserializeISerializable()
         {
@@ -609,17 +615,15 @@ Newtonsoft.Json Error: 0 : Error!
                 LevelFilter = TraceLevel.Verbose
             };
 
-            ExceptionAssert.Throws<SerializationException>(
-                "Member 'ClassName' was not found.",
-                () =>
-                {
-                    JsonConvert.DeserializeObject<Exception>(
-                        "{}",
-                        new JsonSerializerSettings
-                        {
-                            TraceWriter = traceWriter
-                        });
-                });
+            ExceptionAssert.Throws<SerializationException>(() =>
+            {
+                JsonConvert.DeserializeObject<Exception>(
+                    "{}",
+                    new JsonSerializerSettings
+                    {
+                        TraceWriter = traceWriter
+                    });
+            }, "Member 'ClassName' was not found.");
 
             Assert.IsTrue(traceWriter.TraceRecords[0].Message.StartsWith("Deserializing System.Exception using ISerializable constructor. Path ''"));
             Assert.AreEqual(TraceLevel.Info, traceWriter.TraceRecords[0].Level);
@@ -751,7 +755,7 @@ Newtonsoft.Json Error: 0 : Error!
             Assert.AreEqual("IsSpecified result for property 'FavoriteNumber' on Newtonsoft.Json.Tests.Serialization.SpecifiedTestClass: False. Path 'Age'.", traceWriter.TraceRecords[4].Message);
             Assert.AreEqual("Finished serializing Newtonsoft.Json.Tests.Serialization.SpecifiedTestClass. Path ''.", traceWriter.TraceRecords[5].Message);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Age"": 27
 }", json);
 
@@ -778,7 +782,7 @@ Newtonsoft.Json Error: 0 : Error!
             c.FavoriteNumber = 23;
             json = JsonConvert.SerializeObject(c, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""James"",
   ""Age"": 27,
   ""Weight"": 0,
@@ -808,7 +812,7 @@ Newtonsoft.Json Error: 0 : Error!
             Assert.AreEqual(23, deserialized.FavoriteNumber);
         }
 
-#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
         [Test]
         public void TraceJsonWriterTest()
         {
@@ -876,7 +880,7 @@ Newtonsoft.Json Error: 0 : Error!
 
             Console.WriteLine(traceWriter.GetJson());
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Array"": [
     ""String!"",
     ""2000-12-12T12:12:12Z"",
@@ -1037,7 +1041,7 @@ Newtonsoft.Json Error: 0 : Error!
 
             Console.WriteLine(traceReader.GetJson());
 
-            Assert.AreEqual(json, traceReader.GetJson());
+            StringAssert.AreEqual(json, traceReader.GetJson());
         }
 #endif
     }

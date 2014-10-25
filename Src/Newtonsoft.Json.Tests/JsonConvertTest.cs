@@ -25,8 +25,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE)
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE || ASPNETCORE50)
 using System.Numerics;
 #endif
 using System.Runtime.Serialization;
@@ -41,13 +42,16 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Utilities;
-#if !NETFX_CORE
-using NUnit.Framework;
-
-#else
+#if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#elif ASPNETCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests
@@ -67,7 +71,7 @@ namespace Newtonsoft.Json.Tests
 
                 string json = JsonConvert.SerializeObject(new { test = new[] { 1, 2, 3 } });
 
-                Assert.AreEqual(@"{
+                StringAssert.AreEqual(@"{
   ""test"": [
     1,
     2,
@@ -79,6 +83,60 @@ namespace Newtonsoft.Json.Tests
             {
                 JsonConvert.DefaultSettings = null;
             }
+        }
+
+        public class NameTableTestClass
+        {
+            public string Value { get; set; }
+        }
+
+        public class NameTableTestClassConverter : JsonConverter
+        {
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                reader.Read();
+                reader.Read();
+
+                JsonTextReader jsonTextReader = (JsonTextReader)reader;
+                Assert.IsNotNull(jsonTextReader.NameTable);
+
+                string s = serializer.Deserialize<string>(reader);
+                Assert.AreEqual("hi", s);
+                Assert.IsNotNull(jsonTextReader.NameTable);
+
+                NameTableTestClass o = new NameTableTestClass
+                {
+                    Value = s
+                };
+
+                return o;
+            }
+
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(NameTableTestClass);
+            }
+        }
+
+        [Test]
+        public void NameTableTest()
+        {
+            StringReader sr = new StringReader("{'property':'hi'}");
+            JsonTextReader jsonTextReader = new JsonTextReader(sr);
+
+            Assert.IsNull(jsonTextReader.NameTable);
+
+            JsonSerializer serializer = new JsonSerializer();
+            serializer.Converters.Add(new NameTableTestClassConverter());
+            NameTableTestClass o = serializer.Deserialize<NameTableTestClass>(jsonTextReader);
+
+            Assert.IsNull(jsonTextReader.NameTable);
+            Assert.AreEqual("hi", o.Value);
         }
 
         [Test]
@@ -110,7 +168,7 @@ namespace Newtonsoft.Json.Tests
                 //   "jobTitle": "Web Dude"
                 // }
 
-                Assert.AreEqual(@"{
+                StringAssert.AreEqual(@"{
   ""firstName"": ""Eric"",
   ""lastName"": ""Example"",
   ""birthDate"": ""1980-04-20T00:00:00Z"",
@@ -193,7 +251,7 @@ namespace Newtonsoft.Json.Tests
                 JsonSerializer serializer = JsonSerializer.CreateDefault();
                 serializer.Serialize(sw, l);
 
-                Assert.AreEqual(@"[
+                StringAssert.AreEqual(@"[
   1,
   2,
   3
@@ -242,7 +300,7 @@ namespace Newtonsoft.Json.Tests
                 });
                 serializer.Serialize(sw, l);
 
-                Assert.AreEqual(@"[
+                StringAssert.AreEqual(@"[
   2,
   4,
   6
@@ -252,7 +310,7 @@ namespace Newtonsoft.Json.Tests
                 serializer.Converters.Clear();
                 serializer.Serialize(sw, l);
 
-                Assert.AreEqual(@"[
+                StringAssert.AreEqual(@"[
   1,
   2,
   3
@@ -262,7 +320,7 @@ namespace Newtonsoft.Json.Tests
                 serializer = JsonSerializer.Create(new JsonSerializerSettings { Formatting = Formatting.Indented });
                 serializer.Serialize(sw, l);
 
-                Assert.AreEqual(@"[
+                StringAssert.AreEqual(@"[
   1,
   2,
   3
@@ -342,8 +400,7 @@ namespace Newtonsoft.Json.Tests
             result = JavaScriptUtils.ToEscapedJavaScriptString("How now <brown> cow?", '"', true);
             Assert.AreEqual(@"""How now <brown> cow?""", result);
 
-            result = JavaScriptUtils.ToEscapedJavaScriptString(@"How 
-now brown cow?", '"', true);
+            result = JavaScriptUtils.ToEscapedJavaScriptString("How \r\nnow brown cow?", '"', true);
             Assert.AreEqual(@"""How \r\nnow brown cow?""", result);
 
             result = JavaScriptUtils.ToEscapedJavaScriptString("\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007", '"', true);
@@ -408,8 +465,7 @@ now brown cow?", '"', true);
         [Test]
         public void ToStringInvalid()
         {
-            ExceptionAssert.Throws<ArgumentException>("Unsupported type: System.Version. Use the JsonSerializer class to get the object's JSON representation.",
-                () => { JsonConvert.ToString(new Version(1, 0)); });
+            ExceptionAssert.Throws<ArgumentException>(() => { JsonConvert.ToString(new Version(1, 0)); }, "Unsupported type: System.Version. Use the JsonSerializer class to get the object's JSON representation.");
         }
 
         [Test]
@@ -482,7 +538,7 @@ now brown cow?", '"', true);
             value = null;
             Assert.AreEqual("null", JsonConvert.ToString(value));
 
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
             value = DBNull.Value;
             Assert.AreEqual("null", JsonConvert.ToString(value));
 #endif
@@ -500,18 +556,17 @@ now brown cow?", '"', true);
         [Test]
         public void TestInvalidStrings()
         {
-            ExceptionAssert.Throws<JsonReaderException>("Additional text encountered after finished reading JSON content: t. Path '', line 1, position 19.",
-                () =>
-                {
-                    string orig = @"this is a string ""that has quotes"" ";
+            ExceptionAssert.Throws<JsonReaderException>(() =>
+            {
+                string orig = @"this is a string ""that has quotes"" ";
 
-                    string serialized = JsonConvert.SerializeObject(orig);
+                string serialized = JsonConvert.SerializeObject(orig);
 
-                    // *** Make string invalid by stripping \" \"
-                    serialized = serialized.Replace(@"\""", "\"");
+                // *** Make string invalid by stripping \" \"
+                serialized = serialized.Replace(@"\""", "\"");
 
-                    JsonConvert.DeserializeObject<string>(serialized);
-                });
+                JsonConvert.DeserializeObject<string>(serialized);
+            }, "Additional text encountered after finished reading JSON content: t. Path '', line 1, position 19.");
         }
 
         [Test]
@@ -576,11 +631,25 @@ now brown cow?", '"', true);
         [Test]
         public void StringEscaping()
         {
-            string v = @"It's a good day
-""sunshine""";
+            string v = "It's a good day\r\n\"sunshine\"";
 
             string json = JsonConvert.ToString(v);
             Assert.AreEqual(@"""It's a good day\r\n\""sunshine\""""", json);
+        }
+
+        [Test]
+        public void ToStringStringEscapeHandling()
+        {
+            string v = "<b>hi " + '\u20AC' + "</b>";
+
+            string json = JsonConvert.ToString(v, '"');
+            Assert.AreEqual(@"""<b>hi " + '\u20AC' + @"</b>""", json);
+
+            json = JsonConvert.ToString(v, '"', StringEscapeHandling.EscapeHtml);
+            Assert.AreEqual(@"""\u003cb\u003ehi " + '\u20AC' + @"\u003c/b\u003e""", json);
+
+            json = JsonConvert.ToString(v, '"', StringEscapeHandling.EscapeNonAscii);
+            Assert.AreEqual(@"""<b>hi \u20ac</b>""", json);
         }
 
         [Test]
@@ -894,7 +963,7 @@ now brown cow?", '"', true);
 #pragma warning restore 612,618
             task.Wait();
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   1,
   2,
   3,
@@ -1011,6 +1080,8 @@ now brown cow?", '"', true);
             settings.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
             var json = JsonConvert.SerializeObject(dict, settings);
 
+            Console.WriteLine(json);
+
             var newDict = new Dictionary<string, object>();
             JsonConvert.PopulateObject(json, newDict, settings);
 
@@ -1018,9 +1089,58 @@ now brown cow?", '"', true);
 
             Assert.AreEqual(date, now);
         }
+
+        [Test]
+        public void MaximumDateTimeOffsetLength()
+        {
+            DateTimeOffset dt = new DateTimeOffset(2000, 12, 31, 20, 59, 59, new TimeSpan(0, 11, 33, 0, 0));
+            dt = dt.AddTicks(9999999);
+
+            StringWriter sw = new StringWriter();
+            JsonTextWriter writer = new JsonTextWriter(sw);
+
+            writer.WriteValue(dt);
+            writer.Flush();
+
+            Console.WriteLine(sw.ToString());
+            Console.WriteLine(sw.ToString().Length);
+        }
 #endif
 
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE)
+        [Test]
+        public void MaximumDateTimeLength()
+        {
+            DateTime dt = new DateTime(2000, 12, 31, 20, 59, 59, DateTimeKind.Local);
+            dt = dt.AddTicks(9999999);
+
+            StringWriter sw = new StringWriter();
+            JsonTextWriter writer = new JsonTextWriter(sw);
+
+            writer.WriteValue(dt);
+            writer.Flush();
+
+            Console.WriteLine(sw.ToString());
+            Console.WriteLine(sw.ToString().Length);
+        }
+
+        [Test]
+        public void MaximumDateTimeMicrosoftDateFormatLength()
+        {
+            DateTime dt = DateTime.MaxValue;
+
+            StringWriter sw = new StringWriter();
+            JsonTextWriter writer = new JsonTextWriter(sw);
+            writer.DateFormatHandling = DateFormatHandling.MicrosoftDateFormat;
+
+            writer.WriteValue(dt);
+            writer.Flush();
+
+            Console.WriteLine(sw.ToString());
+            Console.WriteLine(sw.ToString().Length);
+        }
+
+
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE || ASPNETCORE50)
         [Test]
         public void IntegerLengthOverflows()
         {
@@ -1031,11 +1151,20 @@ now brown cow?", '"', true);
             Assert.AreEqual(typeof(BigInteger), v.Value.GetType());
             Assert.AreEqual(BigInteger.Parse(new String('9', 380)), (BigInteger)v.Value);
 
-            ExceptionAssert.Throws<JsonReaderException>(
-                "JSON integer " + new String('9', 381) + " is too large to parse. Path 'biginteger', line 1, position 395.",
-                () => JObject.Parse(@"{""biginteger"":" + new String('9', 381) + "}"));
+            ExceptionAssert.Throws<JsonReaderException>(() => JObject.Parse(@"{""biginteger"":" + new String('9', 381) + "}"), "JSON integer " + new String('9', 381) + " is too large to parse. Path 'biginteger', line 1, position 395.");
         }
 #endif
+
+        [Test]
+        public void ParseIsoDate()
+        {
+            StringReader sr = new StringReader(@"""2014-02-14T14:25:02-13:00""");
+
+            JsonReader jsonReader = new JsonTextReader(sr);
+
+            Assert.IsTrue(jsonReader.Read());
+            Assert.AreEqual(typeof(DateTime), jsonReader.ValueType);
+        }
 
         //[Test]
         public void StackOverflowTest()
@@ -1063,6 +1192,150 @@ now brown cow?", '"', true);
         public class Nest
         {
             public Nest A { get; set; }
+        }
+
+        [Test]
+        public void ParametersPassedToJsonConverterConstructor()
+        {
+            ClobberMyProperties clobber = new ClobberMyProperties { One = "Red", Two = "Green", Three = "Yellow", Four = "Black" };
+            string json = JsonConvert.SerializeObject(clobber);
+
+            Assert.AreEqual("{\"One\":\"Uno-1-Red\",\"Two\":\"Dos-2-Green\",\"Three\":\"Tres-1337-Yellow\",\"Four\":\"Black\"}", json);
+        }
+
+        public class ClobberMyProperties
+        {
+            [JsonConverter(typeof(ClobberingJsonConverter), "Uno", 1)]
+            public string One { get; set; }
+
+            [JsonConverter(typeof(ClobberingJsonConverter), "Dos", 2)]
+            public string Two { get; set; }
+
+            [JsonConverter(typeof(ClobberingJsonConverter), "Tres")]
+            public string Three { get; set; }
+
+            public string Four { get; set; }
+        }
+
+        public class ClobberingJsonConverter : JsonConverter
+        {
+            public string ClobberValueString { get; private set; }
+
+            public int ClobberValueInt { get; private set; }
+
+            public ClobberingJsonConverter(string clobberValueString, int clobberValueInt)
+            {
+                ClobberValueString = clobberValueString;
+                ClobberValueInt = clobberValueInt;
+            }
+
+            public ClobberingJsonConverter(string clobberValueString)
+            : this(clobberValueString, 1337)
+            {
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                writer.WriteValue(ClobberValueString + "-" + ClobberValueInt.ToString() + "-" + value.ToString());
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(string);
+            }
+        }
+
+        [Test]
+        public void WrongParametersPassedToJsonConvertConstructorShouldThrow()
+        {
+            IncorrectJsonConvertParameters value = new IncorrectJsonConvertParameters { One = "Boom" };
+
+            ExceptionAssert.Throws<JsonException>(() => { JsonConvert.SerializeObject(value); });
+        }
+
+        public class IncorrectJsonConvertParameters
+        {
+            /// <summary>
+            /// We deliberately use the wrong number/type of arguments for ClobberingJsonConverter to ensure an 
+            /// exception is thrown.
+            /// </summary>
+            [JsonConverter(typeof(ClobberingJsonConverter), "Uno", "Blammo")]
+            public string One { get; set; }
+        }
+
+        [Test]
+        public void CustomDoubleRounding()
+        {
+            var measurements = new Measurements
+            {
+                Loads = new List<double> { 23283.567554707258, 23224.849899771067, 23062.5, 22846.272519910868, 22594.281246368635 },
+                Positions = new List<double> { 57.724227689317019, 60.440934405753069, 63.444192925248643, 66.813119113482557, 70.4496501404433 },
+                Gain = 12345.67895111213
+            };
+
+            string json = JsonConvert.SerializeObject(measurements);
+
+
+            Assert.AreEqual("{\"Positions\":[57.72,60.44,63.44,66.81,70.45],\"Loads\":[23284.0,23225.0,23062.0,22846.0,22594.0],\"Gain\":12345.679}", json);
+        }
+
+        public class Measurements
+        {
+            [JsonProperty(ItemConverterType = typeof(RoundingJsonConverter))]
+            public List<double> Positions { get; set; }
+
+            [JsonProperty(ItemConverterType = typeof(RoundingJsonConverter), ItemConverterParameters = new object[] { 0, MidpointRounding.ToEven })]
+            public List<double> Loads { get; set; }
+
+            [JsonConverter(typeof(RoundingJsonConverter), 4)]
+            public double Gain { get; set; }
+        }
+
+        public class RoundingJsonConverter : JsonConverter
+        {
+            int _precision;
+            MidpointRounding _rounding;
+
+            public RoundingJsonConverter()
+                : this(2)
+            {
+            }
+
+            public RoundingJsonConverter(int precision)
+                : this(precision, MidpointRounding.AwayFromZero)
+            {
+            }
+
+            public RoundingJsonConverter(int precision, MidpointRounding rounding)
+            {
+                _precision = precision;
+                _rounding = rounding;
+            }
+
+            public override bool CanRead
+            {
+                get { return false; }
+            }
+
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(double);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+            
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                writer.WriteValue(Math.Round((double)value, _precision, _rounding));
+            }
         }
     }
 }
