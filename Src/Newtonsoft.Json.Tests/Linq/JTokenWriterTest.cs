@@ -33,7 +33,7 @@ using System.Text;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -124,7 +124,7 @@ namespace Newtonsoft.Json.Tests.Linq
                 jsonWriter.WriteValue("DVD read/writer");
                 Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
                 jsonWriter.WriteValue(new BigInteger(123));
                 Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
 #endif
@@ -141,6 +141,62 @@ namespace Newtonsoft.Json.Tests.Linq
         }
 
         [Test]
+        public void CurrentToken()
+        {
+            using (JTokenWriter jsonWriter = new JTokenWriter())
+            {
+                Assert.AreEqual(WriteState.Start, jsonWriter.WriteState);
+                Assert.AreEqual(null, jsonWriter.CurrentToken);
+
+                jsonWriter.WriteStartObject();
+                Assert.AreEqual(WriteState.Object, jsonWriter.WriteState);
+                Assert.AreEqual(jsonWriter.Token, jsonWriter.CurrentToken);
+
+                JObject o = (JObject)jsonWriter.Token;
+
+                jsonWriter.WritePropertyName("CPU");
+                Assert.AreEqual(WriteState.Property, jsonWriter.WriteState);
+                Assert.AreEqual(o.Property("CPU"), jsonWriter.CurrentToken);
+
+                jsonWriter.WriteValue("Intel");
+                Assert.AreEqual(WriteState.Object, jsonWriter.WriteState);
+                Assert.AreEqual(o["CPU"], jsonWriter.CurrentToken);
+
+                jsonWriter.WritePropertyName("Drives");
+                Assert.AreEqual(WriteState.Property, jsonWriter.WriteState);
+                Assert.AreEqual(o.Property("Drives"), jsonWriter.CurrentToken);
+
+                jsonWriter.WriteStartArray();
+                Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
+                Assert.AreEqual(o["Drives"], jsonWriter.CurrentToken);
+
+                JArray a = (JArray)jsonWriter.CurrentToken;
+
+                jsonWriter.WriteValue("DVD read/writer");
+                Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
+                Assert.AreEqual(a[a.Count - 1], jsonWriter.CurrentToken);
+
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
+                jsonWriter.WriteValue(new BigInteger(123));
+                Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
+                Assert.AreEqual(a[a.Count - 1], jsonWriter.CurrentToken);
+#endif
+
+                jsonWriter.WriteValue(new byte[0]);
+                Assert.AreEqual(WriteState.Array, jsonWriter.WriteState);
+                Assert.AreEqual(a[a.Count - 1], jsonWriter.CurrentToken);
+
+                jsonWriter.WriteEnd();
+                Assert.AreEqual(WriteState.Object, jsonWriter.WriteState);
+                Assert.AreEqual(a, jsonWriter.CurrentToken);
+
+                jsonWriter.WriteEndObject();
+                Assert.AreEqual(WriteState.Start, jsonWriter.WriteState);
+                Assert.AreEqual(o, jsonWriter.CurrentToken);
+            }
+        }
+
+        [Test]
         public void WriteComment()
         {
             JTokenWriter writer = new JTokenWriter();
@@ -153,7 +209,7 @@ namespace Newtonsoft.Json.Tests.Linq
   /*fail*/]", writer.Token.ToString());
         }
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
         [Test]
         public void WriteBigInteger()
         {

@@ -46,17 +46,15 @@ namespace Newtonsoft.Json.Linq
     /// Represents a token that can contain other tokens.
     /// </summary>
     public abstract class JContainer : JToken, IList<JToken>
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(DOTNET || PORTABLE || PORTABLE40)
         , ITypedList, IBindingList
-#elif PORTABLE
-        , INotifyCollectionChanged
 #endif
         , IList
-#if !(NET20 || NET35 || NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(NET20 || NET35 || PORTABLE40)
         , INotifyCollectionChanged
 #endif
     {
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
         internal ListChangedEventHandler _listChanged;
         internal AddingNewEventHandler _addingNew;
 
@@ -132,7 +130,7 @@ namespace Newtonsoft.Json.Linq
             return new List<JToken>();
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
         /// <summary>
         /// Raises the <see cref="AddingNew"/> event.
         /// </summary>
@@ -272,6 +270,23 @@ namespace Newtonsoft.Json.Linq
         /// <returns>An <see cref="IEnumerable{JToken}"/> containing the descendant tokens of the <see cref="JToken"/>.</returns>
         public IEnumerable<JToken> Descendants()
         {
+            return GetDescendants(false);
+        }
+
+        /// <summary>
+        /// Returns a collection of the tokens that contain this token, and all descendant tokens of this token, in document order.
+        /// </summary>
+        /// <returns>An <see cref="IEnumerable{JToken}"/> containing this token, and all the descendant tokens of the <see cref="JToken"/>.</returns>
+        public IEnumerable<JToken> DescendantsAndSelf()
+        {
+            return GetDescendants(true);
+        }
+
+        internal IEnumerable<JToken> GetDescendants(bool self)
+        {
+            if (self)
+                yield return this;
+
             foreach (JToken o in ChildrenTokens)
             {
                 yield return o;
@@ -359,7 +374,7 @@ namespace Newtonsoft.Json.Linq
 
             ChildrenTokens.Insert(index, item);
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             if (_listChanged != null)
                 OnListChanged(new ListChangedEventArgs(ListChangedType.ItemAdded, index));
 #endif
@@ -393,7 +408,7 @@ namespace Newtonsoft.Json.Linq
 
             ChildrenTokens.RemoveAt(index);
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             if (_listChanged != null)
                 OnListChanged(new ListChangedEventArgs(ListChangedType.ItemDeleted, index));
 #endif
@@ -457,7 +472,7 @@ namespace Newtonsoft.Json.Linq
             existing.Previous = null;
             existing.Next = null;
 
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(DOTNET || PORTABLE || PORTABLE40)
             if (_listChanged != null)
                 OnListChanged(new ListChangedEventArgs(ListChangedType.ItemChanged, index));
 #endif
@@ -480,7 +495,7 @@ namespace Newtonsoft.Json.Linq
 
             ChildrenTokens.Clear();
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             if (_listChanged != null)
                 OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
 #endif
@@ -774,7 +789,7 @@ namespace Newtonsoft.Json.Linq
             return hashCode;
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
         string ITypedList.GetListName(PropertyDescriptor[] listAccessors)
         {
             return string.Empty;
@@ -943,7 +958,7 @@ namespace Newtonsoft.Json.Linq
         #endregion
 
         #region IBindingList Members
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
+#if !(DOTNET || PORTABLE || PORTABLE40)
         void IBindingList.AddIndex(PropertyDescriptor property)
         {
         }

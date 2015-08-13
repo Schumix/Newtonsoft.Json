@@ -50,6 +50,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\Portable\</OutputPath>
+    <IntermediateOutputPath>obj\Debug\Portable\</IntermediateOutputPath>
     <DefineConstants>TRACE;DEBUG;PORTABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -60,6 +61,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\Portable\</OutputPath>
+    <IntermediateOutputPath>obj\Release\Portable\</IntermediateOutputPath>
     <DefineConstants>TRACE;PORTABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -76,8 +78,9 @@
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\packages\Microsoft.Bcl.Immutable.1.1.20-beta\lib\portable-net45+win8\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="System.Collections.Immutable, Version=1.1.36.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -143,6 +146,8 @@
     <Compile Include="Serialization\ConstructorHandlingTests.cs" />
     <Compile Include="Serialization\ContractResolverTests.cs" />
     <Compile Include="Serialization\DefaultValueHandlingTests.cs" />
+    <Compile Include="Serialization\DependencyInjectionTests.cs" />
+    <Compile Include="Serialization\DynamicConcreteTests.cs" />
     <Compile Include="Serialization\DynamicTests.cs" />
     <Compile Include="Serialization\ExtensionDataTests.cs" />
     <Compile Include="Serialization\FSharpTests.cs" />
@@ -150,6 +155,7 @@
     <Compile Include="Serialization\JsonSerializerCollectionsTests.cs" />
     <Compile Include="Serialization\MetadataPropertyHandlingTests.cs" />
     <Compile Include="Serialization\ReferenceLoopHandlingTests.cs" />
+    <Compile Include="Serialization\ReflectionAttributeProviderTests.cs" />
     <Compile Include="Serialization\ShouldSerializeTests.cs" />
     <Compile Include="Serialization\TraceWriterTests.cs" />
     <Compile Include="Serialization\WebApiIntegrationTests.cs" />

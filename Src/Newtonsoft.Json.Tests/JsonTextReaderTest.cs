@@ -27,7 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE)
 using System.Numerics;
 #endif
 using System.Text;
@@ -35,7 +35,7 @@ using System.Text;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -52,6 +52,62 @@ namespace Newtonsoft.Json.Tests
     [TestFixture]
     public class JsonTextReaderTest : TestFixtureBase
     {
+        [Test]
+        public void ReadCommentInsideArray()
+        {
+            string json = @"{
+    ""projects"": [
+        ""src"",
+        //""
+        ""test""
+    ]
+}";
+
+            JsonTextReader jsonTextReader = new JsonTextReader(new StringReader(json));
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.StartObject, jsonTextReader.TokenType);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.PropertyName, jsonTextReader.TokenType);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.StartArray, jsonTextReader.TokenType);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.String, jsonTextReader.TokenType);
+            Assert.AreEqual("src", jsonTextReader.Value);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.Comment, jsonTextReader.TokenType);
+            Assert.AreEqual(@"""", jsonTextReader.Value);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.String, jsonTextReader.TokenType);
+            Assert.AreEqual("test", jsonTextReader.Value);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.EndArray, jsonTextReader.TokenType);
+
+            Assert.IsTrue(jsonTextReader.Read());
+            Assert.AreEqual(JsonToken.EndObject, jsonTextReader.TokenType);
+        }
+
+        [Test]
+        public void ReadAsBytes_Base64AndGuid()
+        {
+            JsonTextReader jsonTextReader = new JsonTextReader(new StringReader("'AAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA'"));
+            byte[] data = jsonTextReader.ReadAsBytes();
+            byte[] expected = Convert.FromBase64String("AAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA");
+
+            CollectionAssert.AreEqual(expected, data);
+
+            jsonTextReader = new JsonTextReader(new StringReader("'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAABAAAA'"));
+            data = jsonTextReader.ReadAsBytes();
+            expected = new Guid("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAABAAAA").ToByteArray();
+
+            CollectionAssert.AreEqual(expected, data);
+        }
+
         [Test]
         public void ReadSingleQuoteInsideDoubleQuoteString()
         {
@@ -82,7 +138,7 @@ second line
 third line", jsonTextReader.Value);
         }
 
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE)
         [Test]
         public void ReadBigInteger()
         {
@@ -461,7 +517,6 @@ third line", jsonTextReader.Value);
             {
                 while (jsonReader.Read())
                 {
-                    Console.WriteLine(jsonReader.Value);
                 }
             }
         }
@@ -962,7 +1017,7 @@ third line", jsonTextReader.Value);
             }
         }
 
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE)
         [Test]
         public void ReadInt64Overflow()
         {
@@ -2848,11 +2903,9 @@ null//comment
             double d;
 
             d = Convert.ToDouble("6.0221418e23", CultureInfo.InvariantCulture);
-            Console.WriteLine(d.ToString(new CultureInfo("fr-FR")));
-            Console.WriteLine(d.ToString("0.#############################################################################"));
 
-            //CultureInfo info = CultureInfo.GetCultureInfo("fr-FR");
-            //Console.WriteLine(info.NumberFormat.NumberDecimalSeparator);
+            Assert.AreEqual("6,0221418E+23", d.ToString(new CultureInfo("fr-FR")));
+            Assert.AreEqual("602214180000000000000000", d.ToString("0.#############################################################################"));
 
             string json = @"[0e-10,0E-10,0.25e-5,0.3e10,6.0221418e23]";
 
@@ -3175,7 +3228,7 @@ null//comment
         {
             string json = @"{
   ""frameworks"": {
-    ""aspnetcore50"": {
+    ""dnxcore50"": {
       ""dependencies"": {
         ""System.Xml.ReaderWriter"": {
           ""source"": !!! !!!
@@ -3193,7 +3246,7 @@ null//comment
                     {
                     }
                 },
-                "Unexpected character encountered while parsing value: !. Path 'frameworks.aspnetcore50.dependencies.['System.Xml.ReaderWriter'].source', line 6, position 21.");
+                "Unexpected character encountered while parsing value: !. Path 'frameworks.dnxcore50.dependencies.['System.Xml.ReaderWriter'].source', line 6, position 21.");
         }
     }
 

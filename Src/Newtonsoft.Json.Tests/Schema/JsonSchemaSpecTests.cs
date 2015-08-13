@@ -23,7 +23,8 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(ASPNETCORE50 || NETFX_CORE)
+#pragma warning disable 618
+#if !(DNXCORE50 || NETFX_CORE)
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,18 +59,13 @@ namespace Newtonsoft.Json.Tests.Schema
         [TestCaseSourceAttribute("GetSpecTestDetails")]
         public void SpecTest(JsonSchemaSpecTest jsonSchemaSpecTest)
         {
-            //if (jsonSchemaSpecTest.ToString() == "enum.json - simple enum validation - something else is invalid")
-            {
-                Console.WriteLine("Running JSON Schema test " + jsonSchemaSpecTest.TestNumber + ": " + jsonSchemaSpecTest);
+            JsonSchema s = JsonSchema.Read(jsonSchemaSpecTest.Schema.CreateReader());
 
-                JsonSchema s = JsonSchema.Read(jsonSchemaSpecTest.Schema.CreateReader());
+            IList<string> errorMessages;
+            bool v = jsonSchemaSpecTest.Data.IsValid(s, out errorMessages);
+            errorMessages = errorMessages ?? new List<string>();
 
-                IList<string> errorMessages;
-                bool v = jsonSchemaSpecTest.Data.IsValid(s, out errorMessages);
-                errorMessages = errorMessages ?? new List<string>();
-
-                Assert.AreEqual(jsonSchemaSpecTest.IsValid, v, jsonSchemaSpecTest.TestCaseDescription + " - " + jsonSchemaSpecTest.TestDescription + " - errors: " + string.Join(", ", errorMessages));
-            }
+            Assert.AreEqual(jsonSchemaSpecTest.IsValid, v, jsonSchemaSpecTest.TestCaseDescription + " - " + jsonSchemaSpecTest.TestDescription + " - errors: " + string.Join(", ", errorMessages));
         }
 
         public IList<JsonSchemaSpecTest> GetSpecTestDetails()
@@ -120,3 +116,4 @@ namespace Newtonsoft.Json.Tests.Schema
     }
 }
 #endif
+#pragma warning restore 618

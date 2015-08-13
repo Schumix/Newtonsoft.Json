@@ -39,7 +39,7 @@ using System.Linq;
 namespace Newtonsoft.Json
 {
     /// <summary>
-    /// Represents a reader that provides fast, non-cached, forward-only access to serialized Json data.
+    /// Represents a reader that provides fast, non-cached, forward-only access to serialized JSON data.
     /// </summary>
     public abstract class JsonReader : IDisposable
     {
@@ -251,7 +251,7 @@ namespace Newtonsoft.Json
             get
             {
                 int depth = _stack.Count;
-                if (IsStartToken(TokenType) || _currentPosition.Type == JsonContainerType.None)
+                if (JsonTokenUtils.IsStartToken(TokenType) || _currentPosition.Type == JsonContainerType.None)
                     return depth;
                 else
                     return depth + 1;
@@ -378,9 +378,9 @@ namespace Newtonsoft.Json
         public abstract string ReadAsString();
 
         /// <summary>
-        /// Reads the next JSON token from the stream as a <see cref="T:Byte[]"/>.
+        /// Reads the next JSON token from the stream as a <see cref="Byte"/>[].
         /// </summary>
-        /// <returns>A <see cref="T:Byte[]"/> or a null reference if the next JSON token is null. This method will return <c>null</c> at the end of an array.</returns>
+        /// <returns>A <see cref="Byte"/>[] or a null reference if the next JSON token is null. This method will return <c>null</c> at the end of an array.</returns>
         public abstract byte[] ReadAsBytes();
 
         /// <summary>
@@ -500,7 +500,8 @@ namespace Newtonsoft.Json
                 return data;
             }
 
-            // attempt to convert possible base 64 string to bytes
+            // attempt to convert possible base 64 or GUID string to bytes
+            // GUID has to have format 00000000-0000-0000-0000-000000000000
             if (t == JsonToken.String)
             {
                 string s = (string)Value;
@@ -712,7 +713,7 @@ namespace Newtonsoft.Json
             if (t == JsonToken.Null)
                 return null;
 
-            if (IsPrimitiveToken(t))
+            if (JsonTokenUtils.IsPrimitiveToken(t))
             {
                 if (Value != null)
                 {
@@ -823,7 +824,7 @@ namespace Newtonsoft.Json
             if (TokenType == JsonToken.PropertyName)
                 Read();
 
-            if (IsStartToken(TokenType))
+            if (JsonTokenUtils.IsStartToken(TokenType))
             {
                 int depth = Depth;
 
@@ -961,37 +962,6 @@ namespace Newtonsoft.Json
                 _currentState = State.Start;
             else
                 _currentState = State.Finished;
-        }
-
-        internal static bool IsPrimitiveToken(JsonToken token)
-        {
-            switch (token)
-            {
-                case JsonToken.Integer:
-                case JsonToken.Float:
-                case JsonToken.String:
-                case JsonToken.Boolean:
-                case JsonToken.Undefined:
-                case JsonToken.Null:
-                case JsonToken.Date:
-                case JsonToken.Bytes:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        internal static bool IsStartToken(JsonToken token)
-        {
-            switch (token)
-            {
-                case JsonToken.StartObject:
-                case JsonToken.StartArray:
-                case JsonToken.StartConstructor:
-                    return true;
-                default:
-                    return false;
-            }
         }
 
         private JsonContainerType GetTypeForCloseToken(JsonToken token)

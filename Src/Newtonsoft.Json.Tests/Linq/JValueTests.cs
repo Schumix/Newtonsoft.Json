@@ -26,8 +26,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE)
 using System.Numerics;
 #endif
 using System.Text;
@@ -35,7 +36,7 @@ using System.Text;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -128,7 +129,7 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual("Pie", v.Value);
             Assert.AreEqual(JTokenType.String, v.Type);
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
             v.Value = DBNull.Value;
             Assert.AreEqual(DBNull.Value, v.Value);
             Assert.AreEqual(JTokenType.Null, v.Type);
@@ -157,7 +158,7 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual(g, v.Value);
             Assert.AreEqual(JTokenType.Guid, v.Type);
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             BigInteger i = BigInteger.Parse("123456789999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990");
             v.Value = i;
             Assert.AreEqual(i, v.Value);
@@ -217,13 +218,13 @@ namespace Newtonsoft.Json.Tests.Linq
             v = new JValue(new Guid("B282ADE7-C520-496C-A448-4084F6803DE5"));
             Assert.AreEqual("b282ade7-c520-496c-a448-4084f6803de5", v.ToString(null, CultureInfo.InvariantCulture));
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             v = new JValue(BigInteger.Parse("123456789999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990"));
             Assert.AreEqual("123456789999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999990", v.ToString(null, CultureInfo.InvariantCulture));
 #endif
         }
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
         [Test]
         public void JValueParse()
         {
@@ -472,7 +473,7 @@ namespace Newtonsoft.Json.Tests.Linq
         }
 #endif
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50)
+#if !(NETFX_CORE || PORTABLE)
         [Test]
         public void ConvertsToBoolean()
         {
@@ -491,7 +492,7 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual(Int32.MaxValue, Convert.ToInt32(new JValue(Int32.MaxValue)));
         }
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
         [Test]
         public void ConvertsToInt32_BigInteger()
         {
@@ -653,7 +654,7 @@ namespace Newtonsoft.Json.Tests.Linq
             v = new JValue(new Uri("http://www.google.com"));
             Assert.AreEqual(TypeCode.Object, v.GetTypeCode());
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             v = new JValue(new BigInteger(3));
             Assert.AreEqual(TypeCode.Object, v.GetTypeCode());
 #endif
@@ -667,7 +668,7 @@ namespace Newtonsoft.Json.Tests.Linq
             int i = (int)v.ToType(typeof(int), CultureInfo.InvariantCulture);
             Assert.AreEqual(9, i);
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE)
             BigInteger bi = (BigInteger)v.ToType(typeof(BigInteger), CultureInfo.InvariantCulture);
             Assert.AreEqual(new BigInteger(9), bi);
 #endif
@@ -682,7 +683,7 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual("2013", v.ToString("yyyy"));
         }
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
         [Test]
         public void ToStringNewTypes()
         {
@@ -792,6 +793,20 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual(JTokenType.Integer, v.Type);
             StringComparison e6 = v.ToObject<StringComparison>();
             Assert.AreEqual(StringComparison.OrdinalIgnoreCase, e6);
+
+            // does not support EnumMember. breaking change to add
+            ExceptionAssert.Throws<ArgumentException>(() =>
+            {
+                d = new JValue("value_a");
+                EnumA e7 = (EnumA)d;
+                Assert.AreEqual(EnumA.ValueA, e7);
+            }, "Requested value 'value_a' was not found.");
+        }
+
+        public enum EnumA
+        {
+            [EnumMember(Value = "value_a")]
+            ValueA
         }
 #endif
     }

@@ -25,13 +25,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.Serialization;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -48,6 +49,7 @@ using Newtonsoft.Json.Tests.TestObjects;
 using System.Reflection;
 using Newtonsoft.Json.Utilities;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 namespace Newtonsoft.Json.Tests.Serialization
 {
@@ -56,7 +58,9 @@ namespace Newtonsoft.Json.Tests.Serialization
         private readonly char _startingWithChar;
 
         public DynamicContractResolver(char startingWithChar)
+#pragma warning disable 612,618
             : base(false)
+#pragma warning restore 612,618
         {
             _startingWithChar = startingWithChar;
         }
@@ -78,7 +82,7 @@ namespace Newtonsoft.Json.Tests.Serialization
         public string PropertyPrefix { get; set; }
         public string PropertySuffix { get; set; }
 
-        protected internal override string ResolvePropertyName(string propertyName)
+        protected override string ResolvePropertyName(string propertyName)
         {
             return base.ResolvePropertyName(PropertyPrefix + propertyName + PropertySuffix);
         }
@@ -153,6 +157,17 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.IsTrue(contract.IsInstantiable);
             Assert.AreEqual(typeof(List<int>), contract.CreatedType);
             Assert.IsNotNull(contract.DefaultCreator);
+        }
+
+        [Test]
+        public void PropertyAttributeProvider()
+        {
+            var resolver = new DefaultContractResolver();
+            var contract = (JsonObjectContract)resolver.ResolveContract(typeof(Invoice));
+
+            JsonProperty property = contract.Properties["FollowUpDays"];
+            Assert.AreEqual(1, property.AttributeProvider.GetAttributes(false).Count);
+            Assert.AreEqual(typeof(DefaultValueAttribute), property.AttributeProvider.GetAttributes(false)[0].GetType());
         }
 
         [Test]
@@ -551,7 +566,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 }", startingWithB);
         }
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || PORTABLE40)
 #pragma warning disable 618
         [Test]
         public void SerializeCompilerGeneratedMembers()
@@ -588,14 +603,12 @@ namespace Newtonsoft.Json.Tests.Serialization
             string includeCompilerGeneratedJson = JsonConvert.SerializeObject(structTest, Formatting.Indented,
                 new JsonSerializerSettings { ContractResolver = includeCompilerGeneratedResolver });
 
-            StringAssert.AreEqual(@"{
-  ""StringField"": ""Field"",
-  ""IntField"": 1,
-  ""<StringProperty>k__BackingField"": ""Property"",
-  ""<IntProperty>k__BackingField"": 2,
-  ""StringProperty"": ""Property"",
-  ""IntProperty"": 2
-}", includeCompilerGeneratedJson);
+            JObject o = JObject.Parse(includeCompilerGeneratedJson);
+
+            Console.WriteLine(includeCompilerGeneratedJson);
+
+            Assert.AreEqual("Property", (string)o["<StringProperty>k__BackingField"]);
+            Assert.AreEqual(2, (int)o["<IntProperty>k__BackingField"]);
         }
 #pragma warning restore 618
 #endif

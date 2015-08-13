@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -56,6 +57,7 @@ namespace Newtonsoft.Json
         internal JsonConverterCollection _converters;
         internal IContractResolver _contractResolver;
         internal ITraceWriter _traceWriter;
+        internal IEqualityComparer _equalityComparer;
         internal SerializationBinder _binder;
         internal StreamingContext _context;
         private IReferenceResolver _referenceResolver;
@@ -117,6 +119,16 @@ namespace Newtonsoft.Json
         {
             get { return _traceWriter; }
             set { _traceWriter = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the equality comparer used by the serializer when comparing references.
+        /// </summary>
+        /// <value>The equality comparer.</value>
+        public virtual IEqualityComparer EqualityComparer
+        {
+            get { return _equalityComparer; }
+            set { _equalityComparer = value; }
         }
 
         /// <summary>
@@ -374,7 +386,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Get or set how <see cref="DateTime"/> and <see cref="DateTimeOffset"/> values are formatting when writing JSON text.
+        /// Get or set how <see cref="DateTime"/> and <see cref="DateTimeOffset"/> values are formatted when writing JSON text, and the expected date format when reading JSON text.
         /// </summary>
         public virtual string DateFormatString
         {
@@ -559,10 +571,12 @@ namespace Newtonsoft.Json
 
             if (settings.ContractResolver != null)
                 serializer.ContractResolver = settings.ContractResolver;
-            if (settings.ReferenceResolver != null)
-                serializer.ReferenceResolver = settings.ReferenceResolver;
+            if (settings.ReferenceResolverProvider != null)
+                serializer.ReferenceResolver = settings.ReferenceResolverProvider();
             if (settings.TraceWriter != null)
                 serializer.TraceWriter = settings.TraceWriter;
+            if (settings.EqualityComparer != null)
+                serializer.EqualityComparer = settings.EqualityComparer;
             if (settings.Binder != null)
                 serializer.Binder = settings.Binder;
 
@@ -638,13 +652,13 @@ namespace Newtonsoft.Json
             serializerReader.Populate(traceJsonReader ?? reader, target);
 
             if (traceJsonReader != null)
-                TraceWriter.Trace(TraceLevel.Verbose, "Deserialized JSON: " + Environment.NewLine + traceJsonReader.GetJson(), null);
+                TraceWriter.Trace(TraceLevel.Verbose, traceJsonReader.GetDeserializedJsonMessage(), null);
 
             ResetReader(reader, previousCulture, previousDateTimeZoneHandling, previousDateParseHandling, previousFloatParseHandling, previousMaxDepth, previousDateFormatString);
         }
 
         /// <summary>
-        /// Deserializes the Json structure contained by the specified <see cref="JsonReader"/>.
+        /// Deserializes the JSON structure contained by the specified <see cref="JsonReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="JsonReader"/> that contains the JSON structure to deserialize.</param>
         /// <returns>The <see cref="Object"/> being deserialized.</returns>
@@ -654,7 +668,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Deserializes the Json structure contained by the specified <see cref="StringReader"/>
+        /// Deserializes the JSON structure contained by the specified <see cref="StringReader"/>
         /// into an instance of the specified type.
         /// </summary>
         /// <param name="reader">The <see cref="TextReader"/> containing the object.</param>
@@ -666,7 +680,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Deserializes the Json structure contained by the specified <see cref="JsonReader"/>
+        /// Deserializes the JSON structure contained by the specified <see cref="JsonReader"/>
         /// into an instance of the specified type.
         /// </summary>
         /// <param name="reader">The <see cref="JsonReader"/> containing the object.</param>
@@ -678,7 +692,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Deserializes the Json structure contained by the specified <see cref="JsonReader"/>
+        /// Deserializes the JSON structure contained by the specified <see cref="JsonReader"/>
         /// into an instance of the specified type.
         /// </summary>
         /// <param name="reader">The <see cref="JsonReader"/> containing the object.</param>
@@ -710,7 +724,7 @@ namespace Newtonsoft.Json
             object value = serializerReader.Deserialize(traceJsonReader ?? reader, objectType, CheckAdditionalContent);
 
             if (traceJsonReader != null)
-                TraceWriter.Trace(TraceLevel.Verbose, "Deserialized JSON: " + Environment.NewLine + traceJsonReader.GetJson(), null);
+                TraceWriter.Trace(TraceLevel.Verbose, traceJsonReader.GetDeserializedJsonMessage(), null);
 
             ResetReader(reader, previousCulture, previousDateTimeZoneHandling, previousDateParseHandling, previousFloatParseHandling, previousMaxDepth, previousDateFormatString);
 
@@ -810,10 +824,10 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Serializes the specified <see cref="Object"/> and writes the Json structure
+        /// Serializes the specified <see cref="Object"/> and writes the JSON structure
         /// to a <c>Stream</c> using the specified <see cref="TextWriter"/>. 
         /// </summary>
-        /// <param name="textWriter">The <see cref="TextWriter"/> used to write the Json structure.</param>
+        /// <param name="textWriter">The <see cref="TextWriter"/> used to write the JSON structure.</param>
         /// <param name="value">The <see cref="Object"/> to serialize.</param>
         public void Serialize(TextWriter textWriter, object value)
         {
@@ -821,10 +835,10 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Serializes the specified <see cref="Object"/> and writes the Json structure
+        /// Serializes the specified <see cref="Object"/> and writes the JSON structure
         /// to a <c>Stream</c> using the specified <see cref="TextWriter"/>. 
         /// </summary>
-        /// <param name="jsonWriter">The <see cref="JsonWriter"/> used to write the Json structure.</param>
+        /// <param name="jsonWriter">The <see cref="JsonWriter"/> used to write the JSON structure.</param>
         /// <param name="value">The <see cref="Object"/> to serialize.</param>
         /// <param name="objectType">
         /// The type of the value being serialized.
@@ -837,10 +851,10 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Serializes the specified <see cref="Object"/> and writes the Json structure
+        /// Serializes the specified <see cref="Object"/> and writes the JSON structure
         /// to a <c>Stream</c> using the specified <see cref="TextWriter"/>. 
         /// </summary>
-        /// <param name="textWriter">The <see cref="TextWriter"/> used to write the Json structure.</param>
+        /// <param name="textWriter">The <see cref="TextWriter"/> used to write the JSON structure.</param>
         /// <param name="value">The <see cref="Object"/> to serialize.</param>
         /// <param name="objectType">
         /// The type of the value being serialized.
@@ -853,10 +867,10 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Serializes the specified <see cref="Object"/> and writes the Json structure
+        /// Serializes the specified <see cref="Object"/> and writes the JSON structure
         /// to a <c>Stream</c> using the specified <see cref="JsonWriter"/>. 
         /// </summary>
-        /// <param name="jsonWriter">The <see cref="JsonWriter"/> used to write the Json structure.</param>
+        /// <param name="jsonWriter">The <see cref="JsonWriter"/> used to write the JSON structure.</param>
         /// <param name="value">The <see cref="Object"/> to serialize.</param>
         public void Serialize(JsonWriter jsonWriter, object value)
         {
@@ -925,7 +939,7 @@ namespace Newtonsoft.Json
             serializerWriter.Serialize(traceJsonWriter ?? jsonWriter, value, objectType);
 
             if (traceJsonWriter != null)
-                TraceWriter.Trace(TraceLevel.Verbose, "Serialized JSON: " + Environment.NewLine + traceJsonWriter.GetJson(), null);
+                TraceWriter.Trace(TraceLevel.Verbose, traceJsonWriter.GetSerializedJsonMessage(), null);
 
             // reset writer back to previous options
             if (previousFormatting != null)

@@ -37,61 +37,56 @@ using System.Reflection;
 #if NET20
 using Newtonsoft.Json.Utilities.LinqBridge;
 #endif
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
 using System.Data.SqlTypes;
-
 #endif
 
 namespace Newtonsoft.Json.Utilities
 {
     internal enum PrimitiveTypeCode
     {
-        Empty,
-        Object,
-        Char,
-        CharNullable,
-        Boolean,
-        BooleanNullable,
-        SByte,
-        SByteNullable,
-        Int16,
-        Int16Nullable,
-        UInt16,
-        UInt16Nullable,
-        Int32,
-        Int32Nullable,
-        Byte,
-        ByteNullable,
-        UInt32,
-        UInt32Nullable,
-        Int64,
-        Int64Nullable,
-        UInt64,
-        UInt64Nullable,
-        Single,
-        SingleNullable,
-        Double,
-        DoubleNullable,
-        DateTime,
-        DateTimeNullable,
-#if !NET20
-        DateTimeOffset,
-        DateTimeOffsetNullable,
-#endif
-        Decimal,
-        DecimalNullable,
-        Guid,
-        GuidNullable,
-        TimeSpan,
-        TimeSpanNullable,
-#if !(PORTABLE || NET35 || NET20)
-        BigInteger,
-        BigIntegerNullable,
-#endif
-        Uri,
-        String,
-        Bytes,
-        DBNull
+        Empty = 0,
+        Object = 1,
+        Char = 2,
+        CharNullable = 3,
+        Boolean = 4,
+        BooleanNullable = 5,
+        SByte = 6,
+        SByteNullable = 7,
+        Int16 = 8,
+        Int16Nullable = 9,
+        UInt16 = 10,
+        UInt16Nullable = 11,
+        Int32 = 12,
+        Int32Nullable = 13,
+        Byte = 14,
+        ByteNullable = 15,
+        UInt32 = 16,
+        UInt32Nullable = 17,
+        Int64 = 18,
+        Int64Nullable = 19,
+        UInt64 = 20,
+        UInt64Nullable = 21,
+        Single = 22,
+        SingleNullable = 23,
+        Double = 24,
+        DoubleNullable = 25,
+        DateTime = 26,
+        DateTimeNullable = 27,
+        DateTimeOffset = 28,
+        DateTimeOffsetNullable = 29,
+        Decimal = 30,
+        DecimalNullable = 31,
+        Guid = 32,
+        GuidNullable = 33,
+        TimeSpan = 34,
+        TimeSpanNullable = 35,
+        BigInteger = 36,
+        BigIntegerNullable = 37,
+        Uri = 38,
+        String = 39,
+        Bytes = 40,
+        DBNull = 41
     }
 
     internal class TypeInformation
@@ -102,10 +97,10 @@ namespace Newtonsoft.Json.Utilities
 
     internal enum ParseResult
     {
-        None,
-        Success,
-        Overflow,
-        Invalid
+        None = 0,
+        Success = 1,
+        Overflow = 2,
+        Invalid = 3
     }
 
     internal static class ConvertUtils
@@ -156,14 +151,15 @@ namespace Newtonsoft.Json.Utilities
                 { typeof(Uri), PrimitiveTypeCode.Uri },
                 { typeof(string), PrimitiveTypeCode.String },
                 { typeof(byte[]), PrimitiveTypeCode.Bytes },
-#if !(PORTABLE || PORTABLE40 || NETFX_CORE)
+#if !(PORTABLE || PORTABLE40 || DOTNET)
                 { typeof(DBNull), PrimitiveTypeCode.DBNull }
 #endif
             };
 
-#if !(NETFX_CORE || PORTABLE)
+#if !PORTABLE
         private static readonly TypeInformation[] PrimitiveTypeCodes =
         {
+            // need all of these. lookup against the index with TypeCode value
             new TypeInformation { Type = typeof(object), TypeCode = PrimitiveTypeCode.Empty },
             new TypeInformation { Type = typeof(object), TypeCode = PrimitiveTypeCode.Object },
             new TypeInformation { Type = typeof(object), TypeCode = PrimitiveTypeCode.DBNull },
@@ -223,7 +219,7 @@ namespace Newtonsoft.Json.Utilities
             return PrimitiveTypeCode.Object;
         }
 
-#if !(NETFX_CORE || PORTABLE)
+#if !PORTABLE
         public static TypeInformation GetTypeInformation(IConvertible convertable)
         {
             TypeInformation typeInformation = PrimitiveTypeCodes[(int)convertable.GetTypeCode()];
@@ -233,12 +229,12 @@ namespace Newtonsoft.Json.Utilities
 
         public static bool IsConvertible(Type t)
         {
-#if !(NETFX_CORE || PORTABLE)
+#if !PORTABLE
             return typeof(IConvertible).IsAssignableFrom(t);
 #else
-      return (
-        t == typeof(bool) || t == typeof(byte) || t == typeof(char) || t == typeof(DateTime) || t == typeof(decimal) || t == typeof(double) || t == typeof(short) || t == typeof(int) ||
-        t == typeof(long) || t == typeof(sbyte) || t == typeof(float) || t == typeof(string) || t == typeof(ushort) || t == typeof(uint) || t == typeof(ulong) || t.IsEnum());
+            return (
+                t == typeof(bool) || t == typeof(byte) || t == typeof(char) || t == typeof(DateTime) || t == typeof(decimal) || t == typeof(double) || t == typeof(short) || t == typeof(int) ||
+                t == typeof(long) || t == typeof(sbyte) || t == typeof(float) || t == typeof(string) || t == typeof(ushort) || t == typeof(uint) || t == typeof(ulong) || t.IsEnum());
 #endif
         }
 
@@ -357,13 +353,13 @@ namespace Newtonsoft.Json.Utilities
         }
 #endif
 
-        #region TryConvert
+#region TryConvert
         internal enum ConvertResult
         {
-            Success,
-            CannotConvertNull,
-            NotInstantiableType,
-            NoValidConversion
+            Success = 0,
+            CannotConvertNull = 1,
+            NotInstantiableType = 2,
+            NoValidConversion = 3
         }
 
         public static object Convert(object initialValue, CultureInfo culture, Type targetType)
@@ -500,7 +496,7 @@ namespace Newtonsoft.Json.Utilities
             }
 #endif
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(PORTABLE40 || PORTABLE)
             // see if source or target types have a TypeConverter that converts between the two
             TypeConverter toConverter = GetConverter(initialType);
 
@@ -518,7 +514,7 @@ namespace Newtonsoft.Json.Utilities
                 return ConvertResult.Success;
             }
 #endif
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             // handle DBNull and INullable
             if (initialValue == DBNull.Value)
             {
@@ -533,7 +529,7 @@ namespace Newtonsoft.Json.Utilities
                 return ConvertResult.CannotConvertNull;
             }
 #endif
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             if (initialValue is INullable)
             {
                 value = EnsureTypeAssignable(ToValue((INullable)initialValue), initialType, targetType);
@@ -550,9 +546,9 @@ namespace Newtonsoft.Json.Utilities
             value = null;
             return ConvertResult.NoValidConversion;
         }
-        #endregion
+#endregion
 
-        #region ConvertOrCast
+#region ConvertOrCast
         /// <summary>
         /// Converts the value to the specified type. If the value is unable to be converted, the
         /// value is checked whether it assignable to the specified type.
@@ -579,7 +575,7 @@ namespace Newtonsoft.Json.Utilities
 
             return EnsureTypeAssignable(initialValue, ReflectionUtils.GetObjectType(initialValue), targetType);
         }
-        #endregion
+#endregion
 
         private static object EnsureTypeAssignable(object value, Type initialType, Type targetType)
         {
@@ -603,7 +599,7 @@ namespace Newtonsoft.Json.Utilities
             throw new ArgumentException("Could not cast or convert from {0} to {1}.".FormatWith(CultureInfo.InvariantCulture, (initialType != null) ? initialType.ToString() : "{null}", targetType));
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
         public static object ToValue(INullable nullableValue)
         {
             if (nullableValue == null)
@@ -623,7 +619,7 @@ namespace Newtonsoft.Json.Utilities
         }
 #endif
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(PORTABLE40 || PORTABLE)
         internal static TypeConverter GetConverter(Type t)
         {
             return JsonTypeReflector.GetTypeConverter(t);
@@ -780,14 +776,12 @@ namespace Newtonsoft.Json.Utilities
 
         public static bool TryConvertGuid(string s, out Guid g)
         {
+            // GUID has to have format 00000000-0000-0000-0000-000000000000
 #if NET20 || NET35
             if (s == null)
                 throw new ArgumentNullException("s");
 
-            Regex format = new Regex(
-                "^[A-Fa-f0-9]{32}$|" +
-                "^({|\\()?[A-Fa-f0-9]{8}-([A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}(}|\\))?$|" +
-                "^({)?[0xA-Fa-f0-9]{3,10}(, {0,1}[0xA-Fa-f0-9]{3,6}){2}, {0,1}({)([0xA-Fa-f0-9]{3,4}, {0,1}){7}[0xA-Fa-f0-9]{3,4}(}})$");
+            Regex format = new Regex("^[A-Fa-f0-9]{8}-([A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}$");
             Match match = format.Match(s);
             if (match.Success)
             {
@@ -798,7 +792,7 @@ namespace Newtonsoft.Json.Utilities
             g = Guid.Empty;
             return false;
 #else
-            return Guid.TryParse(s, out g);
+            return Guid.TryParseExact(s, "D", out g);
 #endif
         }
     }

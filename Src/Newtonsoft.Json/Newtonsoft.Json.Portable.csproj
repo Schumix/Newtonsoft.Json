@@ -19,6 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\Portable\</OutputPath>
+    <IntermediateOutputPath>obj\Debug\Portable\</IntermediateOutputPath>
     <DefineConstants>TRACE;DEBUG;PORTABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -29,6 +30,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\Portable\</OutputPath>
+    <IntermediateOutputPath>obj\Release\Portable\</IntermediateOutputPath>
     <DefineConstants>TRACE;PORTABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -92,6 +94,7 @@
     <Compile Include="JsonPropertyAttribute.cs" />
     <Compile Include="JsonReader.cs" />
     <Compile Include="JsonReaderException.cs" />
+    <Compile Include="JsonRequiredAttribute.cs" />
     <Compile Include="JsonSerializationException.cs" />
     <Compile Include="JsonSerializer.cs" />
     <Compile Include="JsonSerializerSettings.cs" />
@@ -166,6 +169,7 @@
     <Compile Include="Serialization\DynamicValueProvider.cs" />
     <Compile Include="Serialization\ErrorContext.cs" />
     <Compile Include="Serialization\ErrorEventArgs.cs" />
+    <Compile Include="Serialization\IAttributeProvider.cs" />
     <Compile Include="Serialization\IContractResolver.cs" />
     <Compile Include="Serialization\IReferenceResolver.cs" />
     <Compile Include="Serialization\ITraceWriter.cs" />
@@ -191,6 +195,7 @@
     <Compile Include="Serialization\MemoryTraceWriter.cs" />
     <Compile Include="Serialization\ObjectConstructor.cs" />
     <Compile Include="Serialization\OnErrorAttribute.cs" />
+    <Compile Include="Serialization\ReflectionAttributeProvider.cs" />
     <Compile Include="Serialization\ReflectionValueProvider.cs" />
     <Compile Include="Serialization\TraceJsonReader.cs" />
     <Compile Include="Serialization\TraceJsonWriter.cs" />
@@ -216,6 +221,7 @@
     <Compile Include="Utilities\ILGeneratorExtensions.cs" />
     <Compile Include="Utilities\ImmutableCollectionsUtils.cs" />
     <Compile Include="Utilities\JavaScriptUtils.cs" />
+    <Compile Include="Utilities\JsonTokenUtils.cs" />
     <Compile Include="Utilities\LateBoundReflectionDelegateFactory.cs" />
     <Compile Include="Utilities\LinqBridge.cs" />
     <Compile Include="Utilities\MathUtils.cs" />

@@ -24,10 +24,14 @@
 #endregion
 
 #if !PORTABLE40
+#if !(PORTABLE || NET20 || NET35)
+using System.Numerics;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
+using System.Reflection;
 #if !(NET20 || PORTABLE40)
 using System.Xml.Linq;
 #endif
@@ -41,7 +45,7 @@ using System.Linq;
 namespace Newtonsoft.Json.Converters
 {
     #region XmlNodeWrappers
-#if !NETFX_CORE && !PORTABLE && !PORTABLE40
+#if !DOTNET && !PORTABLE && !PORTABLE40
     internal class XmlDocumentWrapper : XmlNodeWrapper, IXmlDocument
     {
         private readonly XmlDocument _document;
@@ -925,7 +929,7 @@ namespace Newtonsoft.Json.Converters
             if (value is XObject)
                 return XContainerWrapper.WrapNode((XObject)value);
 #endif
-#if !(NETFX_CORE || PORTABLE)
+#if !(DOTNET || PORTABLE)
             if (value is XmlNode)
                 return XmlNodeWrapper.WrapNode((XmlNode)value);
 #endif
@@ -1253,7 +1257,7 @@ namespace Newtonsoft.Json.Converters
                 rootNode = document;
             }
 #endif
-#if !(NETFX_CORE || PORTABLE)
+#if !(DOTNET || PORTABLE)
             if (typeof(XmlNode).IsAssignableFrom(objectType))
             {
                 if (objectType != typeof(XmlDocument))
@@ -1376,7 +1380,7 @@ namespace Newtonsoft.Json.Converters
                     string attributePrefix = MiscellaneousUtils.GetPrefix(nameValue.Key);
 
                     IXmlNode attribute = (!string.IsNullOrEmpty(attributePrefix))
-                        ? document.CreateAttribute(nameValue.Key, manager.LookupNamespace(attributePrefix), nameValue.Value)
+                        ? document.CreateAttribute(nameValue.Key, manager.LookupNamespace(attributePrefix) ?? string.Empty, nameValue.Value)
                         : document.CreateAttribute(nameValue.Key, nameValue.Value);
 
                     element.SetAttributeNode(attribute);
@@ -1417,6 +1421,11 @@ namespace Newtonsoft.Json.Converters
             }
             else if (reader.TokenType == JsonToken.Integer)
             {
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
+                if (reader.Value is BigInteger)
+                    return ((BigInteger)reader.Value).ToString(CultureInfo.InvariantCulture);
+#endif
+
                 return XmlConvert.ToString(Convert.ToInt64(reader.Value, CultureInfo.InvariantCulture));
             }
             else if (reader.TokenType == JsonToken.Float)
@@ -1440,7 +1449,7 @@ namespace Newtonsoft.Json.Converters
 #endif
 
                 DateTime d = Convert.ToDateTime(reader.Value, CultureInfo.InvariantCulture);
-#if !(NETFX_CORE || PORTABLE)
+#if !PORTABLE
                 return XmlConvert.ToString(d, DateTimeUtils.ToSerializationMode(d.Kind));
 #else
                 return XmlConvert.ToString(d);
@@ -1578,6 +1587,9 @@ namespace Newtonsoft.Json.Converters
 
                             break;
                         case JsonToken.EndObject:
+                            finishedElement = true;
+                            break;
+                        case JsonToken.Comment:
                             finishedElement = true;
                             break;
                         default:
@@ -1769,7 +1781,7 @@ namespace Newtonsoft.Json.Converters
             if (typeof(XObject).IsAssignableFrom(valueType))
                 return true;
 #endif
-#if !(NETFX_CORE || PORTABLE)
+#if !(DOTNET || PORTABLE)
             if (typeof(XmlNode).IsAssignableFrom(valueType))
                 return true;
 #endif

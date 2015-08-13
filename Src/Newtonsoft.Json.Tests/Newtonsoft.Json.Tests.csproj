@@ -17,6 +17,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\Net45\</OutputPath>
+    <IntermediateOutputPath>obj\Debug\Net45\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,6 +26,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\Net45\</OutputPath>
+    <IntermediateOutputPath>obj\Release\Net45\</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -42,9 +44,9 @@
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.1.20.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Bcl.Immutable.1.1.20-beta\lib\portable-net45+win8\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="System.Collections.Immutable, Version=1.1.36.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -91,6 +93,7 @@
     <Compile Include="Documentation\Samples\Bson\DeserializeFromBsonCollection.cs" />
     <Compile Include="Documentation\Samples\Bson\SerializeToBson.cs" />
     <Compile Include="Documentation\Samples\Json\CustomJsonWriter.cs" />
+    <Compile Include="Documentation\Samples\Json\ReadMultipleContentWithJsonReader.cs" />
     <Compile Include="Documentation\Samples\Json\ReadJsonWithJsonTextReader.cs" />
     <Compile Include="Documentation\Samples\Json\CustomJsonReader.cs" />
     <Compile Include="Documentation\Samples\Json\WriteJsonWithJsonTextWriter.cs" />
@@ -107,8 +110,10 @@
     <Compile Include="Documentation\Samples\Linq\DeserializeWithLinq.cs" />
     <Compile Include="Documentation\Samples\Linq\FromObject.cs" />
     <Compile Include="Documentation\Samples\Linq\JObjectProperties.cs" />
+    <Compile Include="Documentation\Samples\Linq\JTokenAnnotation.cs" />
     <Compile Include="Documentation\Samples\Linq\JValueCast.cs" />
     <Compile Include="Documentation\Samples\Linq\JValueValue.cs" />
+    <Compile Include="Documentation\Samples\Linq\MergeJson.cs" />
     <Compile Include="Documentation\Samples\Linq\ModifyJson.cs" />
     <Compile Include="Documentation\Samples\Linq\ParseJsonAny.cs" />
     <Compile Include="Documentation\Samples\Linq\ParseJsonArray.cs" />
@@ -116,7 +121,12 @@
     <Compile Include="Documentation\Samples\Linq\QueryJson.cs" />
     <Compile Include="Documentation\Samples\Linq\QueryJsonDynamic.cs" />
     <Compile Include="Documentation\Samples\Linq\QueryJsonLinq.cs" />
-    <Compile Include="Documentation\Samples\Linq\QueryJsonSelectToken.cs" />
+    <Compile Include="Documentation\Samples\Linq\QueryJsonSelectToken.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Linq\QueryJsonSelectTokenJsonPath.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Documentation\Samples\Linq\QueryJsonSelectTokenWithLinq.cs" />
     <Compile Include="Documentation\Samples\Linq\ReadJson.cs" />
     <Compile Include="Documentation\Samples\Linq\ReadJTokenFromBson.cs" />
@@ -139,11 +149,29 @@
     <Compile Include="Documentation\Samples\Schema\SaveJsonSchemaToFile.cs" />
     <Compile Include="Documentation\Samples\Serializer\CustomContractResolver.cs" />
     <Compile Include="Documentation\Samples\Serializer\CustomJsonConverter.cs" />
-    <Compile Include="Documentation\Samples\Serializer\CustomTraceWriter.cs" />
+    <Compile Include="Documentation\Samples\Serializer\CustomTraceWriter.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Documentation\Samples\Serializer\DataContractAndDataMember.cs" />
+    <Compile Include="Documentation\Samples\Serializer\DefaultSettings.cs" />
     <Compile Include="Documentation\Samples\Serializer\DefaultValueAttributeIgnore.cs" />
     <Compile Include="Documentation\Samples\Serializer\DefaultValueHandlingIgnore.cs" />
     <Compile Include="Documentation\Samples\Serializer\DeserializeAnonymousType.cs" />
+    <Compile Include="Documentation\Samples\Serializer\DeserializeDateFormatString.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Serializer\DeserializeExtensionData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Serializer\DeserializeImmutableCollections.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Serializer\DeserializeWithDependencyInjection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Serializer\DeserializeMetadataPropertyHandling.cs" />
+    <Compile Include="Documentation\Samples\Serializer\JsonConstructorAttribute.cs" />
+    <Compile Include="Documentation\Samples\Serializer\SerializeDateFormatString.cs" />
     <Compile Include="Documentation\Samples\Serializer\DeserializeCollection.cs" />
     <Compile Include="Documentation\Samples\Serializer\DeserializeConstructorHandling.cs" />
     <Compile Include="Documentation\Samples\Serializer\DeserializeCustomCreationConverter.cs" />
@@ -178,6 +206,12 @@
     <Compile Include="Documentation\Samples\Serializer\SerializeDateFormatHandling.cs" />
     <Compile Include="Documentation\Samples\Serializer\SerializeDateTimeZoneHandling.cs" />
     <Compile Include="Documentation\Samples\Serializer\SerializeDictionary.cs" />
+    <Compile Include="Documentation\Samples\Serializer\SerializeExtensionData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Documentation\Samples\Serializer\SerializeImmutableCollections.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Documentation\Samples\Serializer\SerializeObject.cs" />
     <Compile Include="Documentation\Samples\Serializer\SerializeRawJson.cs" />
     <Compile Include="Documentation\Samples\Serializer\SerializeSerializationBinder.cs" />
@@ -213,6 +247,7 @@
     <Compile Include="LinqToSql\LinqToSqlClassesSerializationTests.cs" />
     <Compile Include="LinqToSql\Person.cs" />
     <Compile Include="LinqToSql\Role.cs" />
+    <Compile Include="Linq\AnnotationsTests.cs" />
     <Compile Include="Linq\ComponentModel\BindingTests.cs" />
     <Compile Include="Linq\ComponentModel\JPropertyDescriptorTests.cs" />
     <Compile Include="Linq\DynamicTests.cs" />
@@ -240,6 +275,7 @@
     <Compile Include="Schema\JsonSchemaNodeTests.cs" />
     <Compile Include="Schema\JsonSchemaSpecTests.cs" />
     <Compile Include="Schema\JsonSchemaTests.cs" />
+    <Compile Include="Schema\PerformanceTests.cs" />
     <Compile Include="Serialization\CamelCasePropertyNamesContractResolverTests.cs" />
     <Compile Include="Serialization\ConstructorHandlingTests.cs" />
     <Compile Include="Serialization\ContractResolverTests.cs" />
@@ -259,6 +295,7 @@
     <Compile Include="Serialization\PopulateTests.cs" />
     <Compile Include="Serialization\PreserveReferencesHandlingTests.cs" />
     <Compile Include="Serialization\ReferenceLoopHandlingTests.cs" />
+    <Compile Include="Serialization\ReflectionAttributeProviderTests.cs" />
     <Compile Include="Serialization\SerializationErrorHandlingTests.cs" />
     <Compile Include="Serialization\SerializationEventAttributeTests.cs" />
     <Compile Include="Serialization\JsonSerializerCollectionsTests.cs" />
@@ -389,6 +426,11 @@
     <Compile Include="TestObjects\SetOnlyPropertyClass2.cs" />
     <Compile Include="TestObjects\Shape.cs" />
     <Compile Include="TestObjects\Shortie.cs" />
+    <Compile Include="TestObjects\SqlTypesDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SqlTypesDataSet.xsd</DependentUpon>
+    </Compile>
     <Compile Include="TestObjects\Store.cs" />
     <Compile Include="TestObjects\StoreColor.cs" />
     <Compile Include="TestObjects\StructTest.cs" />
@@ -425,7 +467,9 @@
       <LastGenOutput>LinqToSqlClasses.designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Schema\Specs\additionalItems.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -492,6 +536,17 @@
     <Content Include="SpaceShipV2.bson">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="TestObjects\SqlTypesDataSet.xsc">
+      <DependentUpon>SqlTypesDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="TestObjects\SqlTypesDataSet.xsd">
+      <SubType>Designer</SubType>
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>SqlTypesDataSet.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="TestObjects\SqlTypesDataSet.xss">
+      <DependentUpon>SqlTypesDataSet.xsd</DependentUpon>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EntityDeploy Include="FileSystemEntityModel.edmx">
@@ -507,12 +562,6 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Newtonsoft.Json\Newtonsoft.Json.csproj">
-      <Project>{eeea67f9-9089-481d-a4dc-0966dec9fd7d}</Project>
-      <Name>Newtonsoft.Json</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="bunny_pancake.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -522,6 +571,12 @@
     <Content Include="PoisonText.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Newtonsoft.Json\Newtonsoft.Json.csproj">
+      <Project>{eeea67f9-9089-481d-a4dc-0966dec9fd7d}</Project>
+      <Name>Newtonsoft.Json</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -77,6 +77,7 @@ FILES = \
 	JsonConstructorAttribute.cs \
 	JsonExtensionDataAttribute.cs \
 	JsonPosition.cs \
+	JsonRequiredAttribute.cs \
 	Linq/JPropertyKeyedCollection.cs \
 	Linq/JsonMergeSettings.cs \
 	Linq/JsonPath/ArrayIndexFilter.cs \
@@ -93,9 +94,11 @@ FILES = \
 	MetadataPropertyHandling.cs \
 	Serialization/DiagnosticsTraceWriter.cs \
 	Serialization/ExpressionValueProvider.cs \
+	Serialization/IAttributeProvider.cs \
 	Serialization/ITraceWriter.cs \
 	Serialization/JsonContainerContract.cs \
 	Serialization/MemoryTraceWriter.cs \
+	Serialization/ReflectionAttributeProvider.cs \
 	Serialization/TraceJsonReader.cs \
 	Serialization/TraceJsonWriter.cs \
 	StringEscapeHandling.cs \
@@ -202,6 +205,7 @@ FILES = \
 	Utilities/FSharpUtils.cs \
 	Utilities/ILGeneratorExtensions.cs \
 	Utilities/ImmutableCollectionsUtils.cs \
+	Utilities/JsonTokenUtils.cs \
 	Utilities/LinqBridge.cs \
 	Utilities/PropertyNameTable.cs \
 	Utilities/ReflectionDelegateFactory.cs \

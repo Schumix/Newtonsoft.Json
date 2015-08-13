@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
 using System;
 using System.Globalization;
 using System.Runtime.Serialization;
@@ -34,13 +34,18 @@ namespace Newtonsoft.Json.Serialization
 {
     internal class JsonFormatterConverter : IFormatterConverter
     {
-        private readonly JsonSerializer _serializer;
+        private readonly JsonSerializerInternalReader _reader;
+        private readonly JsonISerializableContract _contract;
+        private readonly JsonProperty _member;
 
-        public JsonFormatterConverter(JsonSerializer serializer)
+        public JsonFormatterConverter(JsonSerializerInternalReader reader, JsonISerializableContract contract, JsonProperty member)
         {
-            ValidationUtils.ArgumentNotNull(serializer, "serializer");
+            ValidationUtils.ArgumentNotNull(reader, "serializer");
+            ValidationUtils.ArgumentNotNull(contract, "contract");
 
-            _serializer = serializer;
+            _reader = reader;
+            _contract = contract;
+            _member = member;
         }
 
         private T GetTokenValue<T>(object value)
@@ -59,7 +64,7 @@ namespace Newtonsoft.Json.Serialization
             if (token == null)
                 throw new ArgumentException("Value is not a JToken.", "value");
 
-            return _serializer.Deserialize(token.CreateReader(), type);
+            return _reader.CreateISerializableItem(token, type, _contract, _member);
         }
 
         public object Convert(object value, TypeCode typeCode)

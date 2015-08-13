@@ -25,7 +25,7 @@
 
 using System;
 using System.Collections.Generic;
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE)
 using System.Numerics;
 #endif
 using System.Text;
@@ -34,7 +34,7 @@ using Newtonsoft.Json.Converters;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -290,6 +290,8 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual(5f, (float)(new JValue(5m)));
             Assert.AreEqual(5f, (float?)(new JValue(5m)));
             Assert.AreEqual(5, (byte)(new JValue(5)));
+            Assert.AreEqual(SByte.MinValue, (sbyte?)(new JValue(SByte.MinValue)));
+            Assert.AreEqual(SByte.MinValue, (sbyte)(new JValue(SByte.MinValue)));
 
             Assert.AreEqual(null, (sbyte?)JValue.CreateNull());
 
@@ -359,7 +361,7 @@ namespace Newtonsoft.Json.Tests.Linq
 
             Assert.AreEqual(5, (int)(new JValue(StringComparison.OrdinalIgnoreCase)));
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             string bigIntegerText = "1234567899999999999999999999999999999999999999999999999999999999999990";
 
             Assert.AreEqual(BigInteger.Parse(bigIntegerText), (new JValue(BigInteger.Parse(bigIntegerText))).Value);
@@ -439,7 +441,7 @@ namespace Newtonsoft.Json.Tests.Linq
 #endif
             ExceptionAssert.Throws<ArgumentException>(() => { var i = (Uri)new JValue(true); }, "Can not convert Boolean to Uri.");
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             ExceptionAssert.Throws<ArgumentException>(() => { var i = (new JValue(new Uri("http://www.google.com"))).ToObject<BigInteger>(); }, "Can not convert Uri to BigInteger.");
             ExceptionAssert.Throws<ArgumentException>(() => { var i = (JValue.CreateNull()).ToObject<BigInteger>(); }, "Can not convert Null to BigInteger.");
             ExceptionAssert.Throws<ArgumentException>(() => { var i = (new JValue(Guid.NewGuid())).ToObject<BigInteger>(); }, "Can not convert Guid to BigInteger.");
@@ -456,7 +458,7 @@ namespace Newtonsoft.Json.Tests.Linq
         [Test]
         public void ToObject()
         {
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50)
+#if !(NET20 || NET35 || PORTABLE)
             Assert.AreEqual((BigInteger)1, (new JValue(1).ToObject(typeof(BigInteger))));
             Assert.AreEqual((BigInteger)1, (new JValue(1).ToObject(typeof(BigInteger?))));
             Assert.AreEqual((BigInteger?)null, (JValue.CreateNull().ToObject(typeof(BigInteger?))));
@@ -513,7 +515,7 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.IsTrue(JToken.DeepEquals(new JValue((DateTimeOffset?)null), (JValue)(DateTimeOffset?)null));
 #endif
 
-#if !(NET20 || NET35 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40)
             // had to remove implicit casting to avoid user reference to System.Numerics.dll
             Assert.IsTrue(JToken.DeepEquals(new JValue(new BigInteger(1)), new JValue(new BigInteger(1))));
             Assert.IsTrue(JToken.DeepEquals(new JValue((BigInteger?)null), new JValue((BigInteger?)null)));
@@ -696,6 +698,85 @@ namespace Newtonsoft.Json.Tests.Linq
         }
 
         [Test]
+        public void AncestorsAndSelf()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            JToken t = a[1][0];
+            List<JToken> ancestors = t.AncestorsAndSelf().ToList();
+            Assert.AreEqual(3, ancestors.Count());
+            Assert.AreEqual(t, ancestors[0]);
+            Assert.AreEqual(a[1], ancestors[1]);
+            Assert.AreEqual(a, ancestors[2]);
+        }
+
+        [Test]
+        public void AncestorsAndSelf_Many()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            JObject o = new JObject
+            {
+                {"prop1", "value1"}
+            };
+
+            JToken t1 = a[1][0];
+            JToken t2 = o["prop1"];
+
+            List<JToken> source = new List<JToken> {t1, t2};
+            
+            List<JToken> ancestors = source.AncestorsAndSelf().ToList();
+            Assert.AreEqual(6, ancestors.Count());
+            Assert.AreEqual(t1, ancestors[0]);
+            Assert.AreEqual(a[1], ancestors[1]);
+            Assert.AreEqual(a, ancestors[2]);
+            Assert.AreEqual(t2, ancestors[3]);
+            Assert.AreEqual(o.Property("prop1"), ancestors[4]);
+            Assert.AreEqual(o, ancestors[5]);
+        }
+
+        [Test]
+        public void Ancestors_Many()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            JObject o = new JObject
+            {
+                {"prop1", "value1"}
+            };
+
+            JToken t1 = a[1][0];
+            JToken t2 = o["prop1"];
+
+            List<JToken> source = new List<JToken> { t1, t2 };
+
+            List<JToken> ancestors = source.Ancestors().ToList();
+            Assert.AreEqual(4, ancestors.Count());
+            Assert.AreEqual(a[1], ancestors[0]);
+            Assert.AreEqual(a, ancestors[1]);
+            Assert.AreEqual(o.Property("prop1"), ancestors[2]);
+            Assert.AreEqual(o, ancestors[3]);
+        }
+
+        [Test]
         public void Descendants()
         {
             JArray a =
@@ -713,6 +794,87 @@ namespace Newtonsoft.Json.Tests.Linq
             Assert.AreEqual(1, (int)descendants[descendants.Count - 3]);
             Assert.AreEqual(2, (int)descendants[descendants.Count - 2]);
             Assert.AreEqual(3, (int)descendants[descendants.Count - 1]);
+        }
+
+        [Test]
+        public void Descendants_Many()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            JObject o = new JObject
+            {
+                {"prop1", "value1"}
+            };
+
+            List<JContainer> source = new List<JContainer> { a, o };
+
+            List<JToken> descendants = source.Descendants().ToList();
+            Assert.AreEqual(12, descendants.Count());
+            Assert.AreEqual(5, (int)descendants[0]);
+            Assert.IsTrue(JToken.DeepEquals(new JArray(1, 2, 3), descendants[descendants.Count - 6]));
+            Assert.AreEqual(1, (int)descendants[descendants.Count - 5]);
+            Assert.AreEqual(2, (int)descendants[descendants.Count - 4]);
+            Assert.AreEqual(3, (int)descendants[descendants.Count - 3]);
+            Assert.AreEqual(o.Property("prop1"), descendants[descendants.Count - 2]);
+            Assert.AreEqual(o["prop1"], descendants[descendants.Count - 1]);
+        }
+
+        [Test]
+        public void DescendantsAndSelf()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            List<JToken> descendantsAndSelf = a.DescendantsAndSelf().ToList();
+            Assert.AreEqual(11, descendantsAndSelf.Count());
+            Assert.AreEqual(a, descendantsAndSelf[0]);
+            Assert.AreEqual(5, (int)descendantsAndSelf[1]);
+            Assert.IsTrue(JToken.DeepEquals(new JArray(1, 2, 3), descendantsAndSelf[descendantsAndSelf.Count - 4]));
+            Assert.AreEqual(1, (int)descendantsAndSelf[descendantsAndSelf.Count - 3]);
+            Assert.AreEqual(2, (int)descendantsAndSelf[descendantsAndSelf.Count - 2]);
+            Assert.AreEqual(3, (int)descendantsAndSelf[descendantsAndSelf.Count - 1]);
+        }
+
+        [Test]
+        public void DescendantsAndSelf_Many()
+        {
+            JArray a =
+                new JArray(
+                    5,
+                    new JArray(1),
+                    new JArray(1, 2),
+                    new JArray(1, 2, 3)
+                    );
+
+            JObject o = new JObject
+            {
+                {"prop1", "value1"}
+            };
+
+            List<JContainer> source = new List<JContainer> { a, o };
+
+            List<JToken> descendantsAndSelf = source.DescendantsAndSelf().ToList();
+            Assert.AreEqual(14, descendantsAndSelf.Count());
+            Assert.AreEqual(a, descendantsAndSelf[0]);
+            Assert.AreEqual(5, (int)descendantsAndSelf[1]);
+            Assert.IsTrue(JToken.DeepEquals(new JArray(1, 2, 3), descendantsAndSelf[descendantsAndSelf.Count - 7]));
+            Assert.AreEqual(1, (int)descendantsAndSelf[descendantsAndSelf.Count - 6]);
+            Assert.AreEqual(2, (int)descendantsAndSelf[descendantsAndSelf.Count - 5]);
+            Assert.AreEqual(3, (int)descendantsAndSelf[descendantsAndSelf.Count - 4]);
+            Assert.AreEqual(o, descendantsAndSelf[descendantsAndSelf.Count - 3]);
+            Assert.AreEqual(o.Property("prop1"), descendantsAndSelf[descendantsAndSelf.Count - 2]);
+            Assert.AreEqual(o["prop1"], descendantsAndSelf[descendantsAndSelf.Count - 1]);
         }
 
         [Test]
@@ -947,12 +1109,36 @@ namespace Newtonsoft.Json.Tests.Linq
 
             JArray a2 = (JArray)a.DeepClone();
 
-            Console.WriteLine(a2.ToString(Formatting.Indented));
+            StringAssert.AreEqual(@"[
+  5,
+  [
+    1
+  ],
+  [
+    1,
+    2
+  ],
+  [
+    1,
+    2,
+    3
+  ],
+  {
+    ""First"": ""SGk="",
+    ""Second"": 1,
+    ""Third"": null,
+    ""Fourth"": new Date(
+      12345
+    ),
+    ""Fifth"": ""Infinity"",
+    ""Sixth"": ""NaN""
+  }
+]", a2.ToString(Formatting.Indented));
 
             Assert.IsTrue(a.DeepEquals(a2));
         }
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
         [Test]
         public void Clone()
         {

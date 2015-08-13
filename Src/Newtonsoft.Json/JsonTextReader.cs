@@ -117,10 +117,15 @@ namespace Newtonsoft.Json
 
             if (_readType == ReadType.ReadAsBytes)
             {
+                Guid g;
                 byte[] data;
                 if (_stringReference.Length == 0)
                 {
                     data = new byte[0];
+                }
+                else if (_stringReference.Length == 36 && ConvertUtils.TryConvertGuid(_stringReference.ToString(), out g))
+                {
+                    data = g.ToByteArray();
                 }
                 else
                 {
@@ -310,10 +315,10 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Reads the next JSON token from the stream as a <see cref="T:Byte[]"/>.
+        /// Reads the next JSON token from the stream as a <see cref="Byte"/>[].
         /// </summary>
         /// <returns>
-        /// A <see cref="T:Byte[]"/> or a null reference if the next JSON token is null. This method will return <c>null</c> at the end of an array.
+        /// A <see cref="Byte"/>[] or a null reference if the next JSON token is null. This method will return <c>null</c> at the end of an array.
         /// </returns>
         public override byte[] ReadAsBytes()
         {
@@ -1619,11 +1624,13 @@ namespace Newtonsoft.Json
             base.Close();
 
             if (CloseInput && _reader != null)
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+            {
+#if !(DOTNET || PORTABLE40 || PORTABLE)
                 _reader.Close();
 #else
                 _reader.Dispose();
 #endif
+            }
 
             if (_buffer != null)
                 _buffer.Clear();

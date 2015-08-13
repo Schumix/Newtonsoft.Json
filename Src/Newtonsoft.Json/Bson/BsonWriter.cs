@@ -139,7 +139,7 @@ namespace Newtonsoft.Json.Bson
         }
 
         /// <summary>
-        /// Writes the beginning of a Json array.
+        /// Writes the beginning of a JSON array.
         /// </summary>
         public override void WriteStartArray()
         {
@@ -149,7 +149,7 @@ namespace Newtonsoft.Json.Bson
         }
 
         /// <summary>
-        /// Writes the beginning of a Json object.
+        /// Writes the beginning of a JSON object.
         /// </summary>
         public override void WriteStartObject()
         {
@@ -159,7 +159,7 @@ namespace Newtonsoft.Json.Bson
         }
 
         /// <summary>
-        /// Writes the property name of a name/value pair on a Json object.
+        /// Writes the property name of a name/value pair on a JSON object.
         /// </summary>
         /// <param name="name">The name of the property.</param>
         public override void WritePropertyName(string name)
@@ -379,7 +379,7 @@ namespace Newtonsoft.Json.Bson
         {
             base.WriteValue(value);
             string s = null;
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             s = value.ToString(CultureInfo.InvariantCulture);
 #else
             s = value.ToString();
@@ -442,9 +442,9 @@ namespace Newtonsoft.Json.Bson
 #endif
 
         /// <summary>
-        /// Writes a <see cref="T:Byte[]"/> value.
+        /// Writes a <see cref="Byte"/>[] value.
         /// </summary>
-        /// <param name="value">The <see cref="T:Byte[]"/> value to write.</param>
+        /// <param name="value">The <see cref="Byte"/>[] value to write.</param>
         public override void WriteValue(byte[] value)
         {
             base.WriteValue(value);
@@ -483,7 +483,7 @@ namespace Newtonsoft.Json.Bson
         #endregion
 
         /// <summary>
-        /// Writes a <see cref="T:Byte[]"/> value that represents a BSON object id.
+        /// Writes a <see cref="Byte"/>[] value that represents a BSON object id.
         /// </summary>
         /// <param name="value">The Object ID value to write.</param>
         public void WriteObjectId(byte[] value)

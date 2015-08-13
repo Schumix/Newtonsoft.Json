@@ -34,7 +34,7 @@ using Newtonsoft.Json.Tests.Bson;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -54,6 +54,52 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
     [TestFixture]
     public class JPathExecuteTests : TestFixtureBase
     {
+        [Test]
+        public void ParseWithEmptyArrayContent()
+        {
+            var json = @"{
+    'controls': [
+        {
+            'messages': {
+                'addSuggestion': {
+                    'en-US': 'Add'
+                }
+            }
+        },
+        {
+            'header': {
+                'controls': []
+            },
+            'controls': [
+                {
+                    'controls': [
+                        {
+                            'defaultCaption': {
+                                'en-US': 'Sort by'
+                            },
+                            'sortOptions': [
+                                {
+                                    'label': {
+                                        'en-US': 'Name'
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}";
+            JObject jToken = JObject.Parse(json);
+            IList<JToken> tokens = jToken.SelectTokens("$..en-US").ToList();
+
+            Assert.AreEqual(3, tokens.Count);
+            Assert.AreEqual("Add", (string)tokens[0]);
+            Assert.AreEqual("Sort by", (string)tokens[1]);
+            Assert.AreEqual("Name", (string)tokens[2]);
+        }
+
         [Test]
         public void SelectTokenAfterEmptyContainer()
         {
@@ -605,7 +651,7 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             Assert.IsTrue(JToken.DeepEquals(new JObject(new JProperty("hi", 3)), t[1]));
         }
 
-#if !(PORTABLE || ASPNETCORE50 || PORTABLE40 || NET35 || NET20)
+#if !(PORTABLE || DNXCORE50 || PORTABLE40 || NET35 || NET20)
         [Test]
         public void GreaterQueryBigInteger()
         {

@@ -35,19 +35,15 @@ namespace Newtonsoft.Json.Serialization
 {
     internal enum JsonContractType
     {
-        None,
-        Object,
-        Array,
-        Primitive,
-        String,
-        Dictionary,
-#if !(NET35 || NET20 || PORTABLE40)
-        Dynamic,
-#endif
-#if !(NETFX_CORE || PORTABLE || PORTABLE40)
-        Serializable,
-#endif
-        Linq
+        None = 0,
+        Object = 1,
+        Array = 2,
+        Primitive = 3,
+        String = 4,
+        Dictionary = 5,
+        Dynamic = 6,
+        Serializable = 7,
+        Linq = 8
     }
 
     /// <summary>
@@ -80,7 +76,7 @@ namespace Newtonsoft.Json.Serialization
     public delegate IEnumerable<KeyValuePair<object, object>> ExtensionDataGetter(object o);
 
     /// <summary>
-    /// Contract details for a <see cref="Type"/> used by the <see cref="JsonSerializer"/>.
+    /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
     public abstract class JsonContract
     {

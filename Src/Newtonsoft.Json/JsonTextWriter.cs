@@ -37,7 +37,7 @@ using Newtonsoft.Json.Utilities;
 namespace Newtonsoft.Json
 {
     /// <summary>
-    /// Represents a writer that provides a fast, non-cached, forward-only way of generating Json data.
+    /// Represents a writer that provides a fast, non-cached, forward-only way of generating JSON data.
     /// </summary>
     public class JsonTextWriter : JsonWriter
     {
@@ -152,15 +152,17 @@ namespace Newtonsoft.Json
             base.Close();
 
             if (CloseOutput && _writer != null)
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+            {
+#if !(DOTNET || PORTABLE40 || PORTABLE)
                 _writer.Close();
 #else
                 _writer.Dispose();
 #endif
+            }
         }
 
         /// <summary>
-        /// Writes the beginning of a Json object.
+        /// Writes the beginning of a JSON object.
         /// </summary>
         public override void WriteStartObject()
         {
@@ -170,7 +172,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Writes the beginning of a Json array.
+        /// Writes the beginning of a JSON array.
         /// </summary>
         public override void WriteStartArray()
         {
@@ -215,7 +217,7 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Writes the property name of a name/value pair on a Json object.
+        /// Writes the property name of a name/value pair on a JSON object.
         /// </summary>
         /// <param name="name">The name of the property.</param>
         public override void WritePropertyName(string name)
@@ -578,9 +580,9 @@ namespace Newtonsoft.Json
         }
 
         /// <summary>
-        /// Writes a <see cref="T:Byte[]"/> value.
+        /// Writes a <see cref="Byte"/>[] value.
         /// </summary>
-        /// <param name="value">The <see cref="T:Byte[]"/> value to write.</param>
+        /// <param name="value">The <see cref="Byte"/>[] value to write.</param>
         public override void WriteValue(byte[] value)
         {
             if (value == null)
@@ -636,7 +638,7 @@ namespace Newtonsoft.Json
 
             string text = null;
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             text = value.ToString("D", CultureInfo.InvariantCulture);
 #else
             text = value.ToString("D");

@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(PORTABLE || NETFX_CORE || PORTABLE40)
+#if !(DOTNET || PORTABLE || PORTABLE40)
 using System;
 using System.Collections.Generic;
 #if NET20
@@ -252,6 +252,13 @@ namespace Newtonsoft.Json.Utilities
 
         public override Func<T, object> CreateGet<T>(FieldInfo fieldInfo)
         {
+            if (fieldInfo.IsLiteral)
+            {
+                object constantValue = fieldInfo.GetValue(null);
+                Func<T, object> getter = o => constantValue;
+                return getter;
+            }
+
             DynamicMethod dynamicMethod = CreateDynamicMethod("Get" + fieldInfo.Name, typeof(T), new[] { typeof(object) }, fieldInfo.DeclaringType);
             ILGenerator generator = dynamicMethod.GetILGenerator();
 

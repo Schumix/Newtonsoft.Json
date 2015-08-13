@@ -33,7 +33,7 @@ using Newtonsoft.Json.Utilities;
 namespace Newtonsoft.Json.Linq
 {
     /// <summary>
-    /// Represents a writer that provides a fast, non-cached, forward-only way of generating Json data.
+    /// Represents a writer that provides a fast, non-cached, forward-only way of generating JSON data.
     /// </summary>
     public class JTokenWriter : JsonWriter
     {
@@ -41,6 +41,15 @@ namespace Newtonsoft.Json.Linq
         private JContainer _parent;
         // used when writer is writing single value and the value has no containing parent
         private JValue _value;
+        private JToken _current;
+
+        /// <summary>
+        /// Gets the <see cref="JToken"/> at the writer's current position.
+        /// </summary>
+        public JToken CurrentToken
+        {
+            get { return _current; }
+        }
 
         /// <summary>
         /// Gets the token being writen.
@@ -92,7 +101,7 @@ namespace Newtonsoft.Json.Linq
         }
 
         /// <summary>
-        /// Writes the beginning of a Json object.
+        /// Writes the beginning of a JSON object.
         /// </summary>
         public override void WriteStartObject()
         {
@@ -109,10 +118,12 @@ namespace Newtonsoft.Json.Linq
                 _parent.AddAndSkipParentCheck(container);
 
             _parent = container;
+            _current = container;
         }
 
         private void RemoveParent()
         {
+            _current = _parent;
             _parent = _parent.Parent;
 
             if (_parent != null && _parent.Type == JTokenType.Property)
@@ -120,7 +131,7 @@ namespace Newtonsoft.Json.Linq
         }
 
         /// <summary>
-        /// Writes the beginning of a Json array.
+        /// Writes the beginning of a JSON array.
         /// </summary>
         public override void WriteStartArray()
         {
@@ -150,7 +161,7 @@ namespace Newtonsoft.Json.Linq
         }
 
         /// <summary>
-        /// Writes the property name of a name/value pair on a Json object.
+        /// Writes the property name of a name/value pair on a JSON object.
         /// </summary>
         /// <param name="name">The name of the property.</param>
         public override void WritePropertyName(string name)
@@ -172,6 +183,7 @@ namespace Newtonsoft.Json.Linq
             if (_parent != null)
             {
                 _parent.Add(value);
+                _current = _parent.Last;
 
                 if (_parent.Type == JTokenType.Property)
                     _parent = _parent.Parent;
@@ -179,6 +191,7 @@ namespace Newtonsoft.Json.Linq
             else
             {
                 _value = value ?? JValue.CreateNull();
+                _current = _value;
             }
         }
 
@@ -352,7 +365,7 @@ namespace Newtonsoft.Json.Linq
         {
             base.WriteValue(value);
             string s = null;
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             s = value.ToString(CultureInfo.InvariantCulture);
 #else
             s = value.ToString();
@@ -415,9 +428,9 @@ namespace Newtonsoft.Json.Linq
 #endif
 
         /// <summary>
-        /// Writes a <see cref="T:Byte[]"/> value.
+        /// Writes a <see cref="Byte"/>[] value.
         /// </summary>
-        /// <param name="value">The <see cref="T:Byte[]"/> value to write.</param>
+        /// <param name="value">The <see cref="Byte"/>[] value to write.</param>
         public override void WriteValue(byte[] value)
         {
             base.WriteValue(value);

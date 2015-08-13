@@ -27,14 +27,14 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
 using System;
 using System.Collections.Generic;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -425,7 +425,6 @@ namespace Newtonsoft.Json.Tests.Converters
             Assert.AreEqual("item!", pair2.Key.Rows[0]["item"]);
         }
 
-
         [Test]
         public void SerializedTypedDataTable()
         {
@@ -454,7 +453,91 @@ namespace Newtonsoft.Json.Tests.Converters
 
             Assert.AreEqual("432", dt[0].CustomerID);
         }
+
+        public class DataTableTestClass
+        {
+            public DataTable Table { get; set; }
+        }
+
+        [Test]
+        public void SerializeNull()
+        {
+            DataTableTestClass c1 = new DataTableTestClass
+            {
+                Table = null
+            };
+
+            string json = JsonConvert.SerializeObject(c1, Formatting.Indented);
+
+            StringAssert.AreEqual(@"{
+  ""Table"": null
+}", json);
+
+            DataTableTestClass c2 = JsonConvert.DeserializeObject<DataTableTestClass>(json);
+
+            Assert.AreEqual(null, c2.Table);
+        }
+
+        [Test]
+        public void SerializeNullRoot()
+        {
+            string json = JsonConvert.SerializeObject(null, typeof(DataTable), new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            });
+
+            StringAssert.AreEqual(@"null", json);
+        }
+
+#if !(NET20 || PORTABLE || PORTABLE40)
+        [Test]
+        public void DeserializedTypedDataTableWithConverter()
+        {
+            string json = @"{
+  ""TestTable"": [
+    {
+      ""DateTimeValue"": ""2015-11-28T00:00:00""
+    },
+    {
+      ""DateTimeValue"": null
+    }
+  ]
+}";
+
+            SqlTypesDataSet ds = JsonConvert.DeserializeObject<SqlTypesDataSet>(json, new SqlDateTimeConverter());
+
+            Assert.AreEqual(new System.Data.SqlTypes.SqlDateTime(2015, 11, 28), ds.TestTable[0].DateTimeValue);
+            Assert.AreEqual(System.Data.SqlTypes.SqlDateTime.Null, ds.TestTable[1].DateTimeValue);
+            
+            string json2 = JsonConvert.SerializeObject(ds, Formatting.Indented, new SqlDateTimeConverter());
+
+            StringAssert.AreEqual(json, json2);
+        }
+
+        internal class SqlDateTimeConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return typeof(System.Data.SqlTypes.SqlDateTime).IsAssignableFrom(objectType);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                if (reader.Value == null || reader.Value == DBNull.Value)
+                    return System.Data.SqlTypes.SqlDateTime.Null;
+                else
+                    return new System.Data.SqlTypes.SqlDateTime((DateTime)serializer.Deserialize(reader));
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                if (((System.Data.SqlTypes.SqlDateTime)value).IsNull)
+                    writer.WriteNull();
+                else
+                    writer.WriteValue(((System.Data.SqlTypes.SqlDateTime)value).Value);
+            }
+        }
+#endif
     }
 }
-
 #endif

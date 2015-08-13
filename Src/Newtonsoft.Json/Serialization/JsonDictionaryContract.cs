@@ -37,7 +37,7 @@ using Newtonsoft.Json.Utilities.LinqBridge;
 namespace Newtonsoft.Json.Serialization
 {
     /// <summary>
-    /// Contract details for a <see cref="Type"/> used by the <see cref="JsonSerializer"/>.
+    /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
     public class JsonDictionaryContract : JsonContainerContract
     {
@@ -45,18 +45,29 @@ namespace Newtonsoft.Json.Serialization
         /// Gets or sets the property name resolver.
         /// </summary>
         /// <value>The property name resolver.</value>
-        public Func<string, string> PropertyNameResolver { get; set; }
+        [Obsolete("PropertyNameResolver is obsolete. Use DictionaryKeyResolver instead.")]
+        public Func<string, string> PropertyNameResolver
+        {
+            get { return DictionaryKeyResolver; }
+            set { DictionaryKeyResolver = value; }
+        }
 
         /// <summary>
-        /// Gets the <see cref="Type"/> of the dictionary keys.
+        /// Gets or sets the dictionary key resolver.
         /// </summary>
-        /// <value>The <see cref="Type"/> of the dictionary keys.</value>
+        /// <value>The dictionary key resolver.</value>
+        public Func<string, string> DictionaryKeyResolver { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="System.Type"/> of the dictionary keys.
+        /// </summary>
+        /// <value>The <see cref="System.Type"/> of the dictionary keys.</value>
         public Type DictionaryKeyType { get; private set; }
 
         /// <summary>
-        /// Gets the <see cref="Type"/> of the dictionary values.
+        /// Gets the <see cref="System.Type"/> of the dictionary values.
         /// </summary>
-        /// <value>The <see cref="Type"/> of the dictionary values.</value>
+        /// <value>The <see cref="System.Type"/> of the dictionary values.</value>
         public Type DictionaryValueType { get; private set; }
 
         internal JsonContract KeyContract { get; set; }
@@ -137,7 +148,7 @@ namespace Newtonsoft.Json.Serialization
             {
                 _parametrizedConstructor = CollectionUtils.ResolveEnumerableCollectionConstructor(CreatedType, typeof(KeyValuePair<,>).MakeGenericType(keyType, valueType));
 
-#if !(NET35 || NET20 || NETFX_CORE)
+#if !(NET35 || NET20)
                 if (!HasParametrizedCreator && underlyingType.Name == FSharpUtils.FSharpMapTypeName)
                 {
                     FSharpUtils.EnsureInitialized(underlyingType.Assembly());

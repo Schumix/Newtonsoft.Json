@@ -29,7 +29,7 @@ using Newtonsoft.Json.Schema;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -87,6 +87,7 @@ namespace Newtonsoft.Json.Tests
             Assert.AreEqual("Inner!", exception.InnerException.Message);
         }
 
+#pragma warning disable 618
         [Test]
         public void JsonSchemaException()
         {
@@ -101,5 +102,6 @@ namespace Newtonsoft.Json.Tests
             Assert.AreEqual("Message!", exception.Message);
             Assert.AreEqual("Inner!", exception.InnerException.Message);
         }
+#pragma warning restore 618
     }
 }

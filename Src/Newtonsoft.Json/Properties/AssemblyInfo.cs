@@ -36,8 +36,8 @@ using System.Security;
 [assembly: AssemblyTitle("Json.NET Portable .NET 4.0")]
 #elif PORTABLE
 [assembly: AssemblyTitle("Json.NET Portable")]
-#elif NETFX_CORE
-[assembly: AssemblyTitle("Json.NET WinRT")]
+#elif DOTNET
+[assembly: AssemblyTitle("Json.NET .NET Platform")]
 #elif NET20
 [assembly: AssemblyTitle("Json.NET .NET 2.0")]
 [assembly: AllowPartiallyTrustedCallers]
@@ -53,9 +53,10 @@ using System.Security;
 #endif
 
 #if !SIGNED
-
+[assembly: InternalsVisibleTo("Newtonsoft.Json.Schema")]
 [assembly: InternalsVisibleTo("Newtonsoft.Json.Tests")]
 #else
+[assembly: InternalsVisibleTo("Newtonsoft.Json.Schema, PublicKey=0024000004800000940000000602000000240000525341310004000001000100f561df277c6c0b497d629032b410cdcf286e537c054724f7ffa0164345f62b3e642029d7a80cc351918955328c4adc8a048823ef90b0cf38ea7db0d729caf2b633c3babe08b0310198c1081995c19029bc675193744eab9d7345b8a67258ec17d112cebdbbb2a281487dceeafb9d83aa930f32103fbe1d2911425bc5744002c7")]
 [assembly: InternalsVisibleTo("Newtonsoft.Json.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100f561df277c6c0b497d629032b410cdcf286e537c054724f7ffa0164345f62b3e642029d7a80cc351918955328c4adc8a048823ef90b0cf38ea7db0d729caf2b633c3babe08b0310198c1081995c19029bc675193744eab9d7345b8a67258ec17d112cebdbbb2a281487dceeafb9d83aa930f32103fbe1d2911425bc5744002c7")]
 #endif
 
@@ -90,6 +91,6 @@ using System.Security;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("6.0.0.0")]
-[assembly: AssemblyFileVersion("6.0.6.17820")]
+[assembly: AssemblyVersion("7.0.0.0")]
+[assembly: AssemblyFileVersion("7.0.2.18802")]
 [assembly: CLSCompliant(true)]

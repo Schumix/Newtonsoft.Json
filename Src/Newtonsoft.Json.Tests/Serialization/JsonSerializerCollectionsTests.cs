@@ -25,7 +25,9 @@
 
 using System;
 using System.Collections;
-#if !(NET35 || NET20 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+using System.Collections.Specialized;
+using System.Runtime.Serialization;
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
 using System.Collections.Concurrent;
 #endif
 using System.Collections.Generic;
@@ -44,7 +46,7 @@ using Newtonsoft.Json.Tests.TestObjects;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -57,6 +59,174 @@ namespace Newtonsoft.Json.Tests.Serialization
     [TestFixture]
     public class JsonSerializerCollectionsTests : TestFixtureBase
     {
+#if !(NETFX_CORE || DNXCORE50)
+        public class NameValueCollectionTestClass
+        {
+            public NameValueCollection Collection { get; set; }
+        }
+
+        [Test]
+        public void DeserializeNameValueCollection()
+        {
+            ExceptionAssert.Throws<JsonSerializationException>(
+                () => JsonConvert.DeserializeObject<NameValueCollectionTestClass>("{Collection:[]}"),
+                "Cannot create and populate list type System.Collections.Specialized.NameValueCollection. Path 'Collection', line 1, position 13.");
+        }
+#endif
+
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
+        public class SomeObject
+        {
+            public string Text1 { get; set; }
+        }
+
+        public class CustomConcurrentDictionary : ConcurrentDictionary<string, List<SomeObject>>
+        {
+            [OnDeserialized]
+            internal void OnDeserializedMethod(StreamingContext context)
+            {
+                ((IDictionary)this).Add("key2", new List<SomeObject>
+                {
+                    new SomeObject
+                    {
+                        Text1 = "value2"
+                    }
+                });
+            }
+        }
+
+        [Test]
+        public void SerializeCustomConcurrentDictionary()
+        {
+            IDictionary d = new CustomConcurrentDictionary();
+            d.Add("key", new List<SomeObject>
+            {
+                new SomeObject
+                {
+                    Text1 = "value1"
+                }
+            });
+
+            string json  = JsonConvert.SerializeObject(d, Formatting.Indented);
+
+            Assert.AreEqual(@"{
+  ""key"": [
+    {
+      ""Text1"": ""value1""
+    }
+  ]
+}", json);
+
+            CustomConcurrentDictionary d2 = JsonConvert.DeserializeObject<CustomConcurrentDictionary>(json);
+
+            Assert.AreEqual(2, d2.Count);
+            Assert.AreEqual("value1", d2["key"][0].Text1);
+            Assert.AreEqual("value2", d2["key2"][0].Text1);
+        }
+#endif
+
+        [Test]
+        public void NonZeroBasedArray()
+        {
+            var onebasedArray = Array.CreateInstance(typeof(string), new[] { 3 }, new[] { 2 });
+
+            for (var i = onebasedArray.GetLowerBound(0); i <= onebasedArray.GetUpperBound(0); i++)
+            {
+                onebasedArray.SetValue(i.ToString(CultureInfo.InvariantCulture), new[] { i, });
+            }
+
+            string output = JsonConvert.SerializeObject(onebasedArray, Formatting.Indented);
+
+            StringAssert.AreEqual(@"[
+  ""2"",
+  ""3"",
+  ""4""
+]", output);
+        }
+
+        [Test]
+        public void NonZeroBasedMultiArray()
+        {
+            // lets create a two dimensional array, each rank is 1-based of with a capacity of 4.
+            var onebasedArray = Array.CreateInstance(typeof(string), new[] { 3, 3 }, new[] { 1, 2 });
+
+            // Iterate of the array elements and assign a random double
+            for (var i = onebasedArray.GetLowerBound(0); i <= onebasedArray.GetUpperBound(0); i++)
+            {
+                for (var j = onebasedArray.GetLowerBound(1); j <= onebasedArray.GetUpperBound(1); j++)
+                {
+                    onebasedArray.SetValue(i + "_" + j, new[] { i, j });
+                }
+            }
+
+            // Now lets try and serialize the Array
+            string output = JsonConvert.SerializeObject(onebasedArray, Formatting.Indented);
+
+            StringAssert.AreEqual(@"[
+  [
+    ""1_2"",
+    ""1_3"",
+    ""1_4""
+  ],
+  [
+    ""2_2"",
+    ""2_3"",
+    ""2_4""
+  ],
+  [
+    ""3_2"",
+    ""3_3"",
+    ""3_4""
+  ]
+]", output);
+        }
+
+        [Test]
+        public void MultiDObjectArray()
+        {
+            object[,] myOtherArray =
+            {
+                { new KeyValuePair<string, double>("my value", 0.8), "foobar" },
+                { true, 0.4d },
+                { 0.05f, 6 }
+            };
+
+            string myOtherArrayAsString = JsonConvert.SerializeObject(myOtherArray, Formatting.Indented);
+
+            StringAssert.AreEqual(@"[
+  [
+    {
+      ""Key"": ""my value"",
+      ""Value"": 0.8
+    },
+    ""foobar""
+  ],
+  [
+    true,
+    0.4
+  ],
+  [
+    0.05,
+    6
+  ]
+]", myOtherArrayAsString);
+
+            JObject o = JObject.Parse(@"{
+              ""Key"": ""my value"",
+              ""Value"": 0.8
+            }");
+
+            object[,] myOtherResult = JsonConvert.DeserializeObject<object[,]>(myOtherArrayAsString);
+            Assert.IsTrue(JToken.DeepEquals(o, (JToken)myOtherResult[0, 0]));
+            Assert.AreEqual("foobar", myOtherResult[0, 1]);
+
+            Assert.AreEqual(true, myOtherResult[1, 0]);
+            Assert.AreEqual(0.4, myOtherResult[1, 1]);
+
+            Assert.AreEqual(0.05, myOtherResult[2, 0]);
+            Assert.AreEqual(6L, myOtherResult[2, 1]);
+        }
+
         public class EnumerableClass<T> : IEnumerable<T>
         {
             private readonly IList<T> _values;
@@ -545,7 +715,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(3, v2["Third"]);
         }
 
-#if !(NET35 || NET20 || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
         [Test]
         public void DeserializeConcurrentDictionary()
         {
@@ -1259,7 +1429,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(1, (int)((JObject)o.Data[2])["one"]);
         }
 
-#if !(NETFX_CORE || ASPNETCORE50)
+#if !(NETFX_CORE || DNXCORE50)
         [Test]
         public void SerializeArrayAsArrayList()
         {
@@ -1460,16 +1630,10 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             List<Product> products = JsonConvert.DeserializeObject<List<Product>>(json);
 
-            Console.WriteLine(products.Count);
-            // 2
-
             Product p1 = products[0];
 
-            Console.WriteLine(p1.Name);
-            // Product 1
-
             Assert.AreEqual(2, products.Count);
-            Assert.AreEqual("Product 1", products[0].Name);
+            Assert.AreEqual("Product 1", p1.Name);
         }
 
 #if !(NET40 || NET35 || NET20 || PORTABLE40)
@@ -1492,6 +1656,21 @@ namespace Newtonsoft.Json.Tests.Serialization
   3,
   2147483647
 ]", json);
+        }
+#endif
+
+#if !DNXCORE50
+        [Test]
+        public void EmptyStringInHashtableIsDeserialized()
+        {
+            string externalJson = @"{""$type"":""System.Collections.Hashtable, mscorlib"",""testkey"":""""}";
+
+            JsonSerializerSettings settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+
+            JsonConvert.SerializeObject(new Hashtable { { "testkey", "" } }, settings);
+            Hashtable deserializeTest2 = JsonConvert.DeserializeObject<Hashtable>(externalJson, settings);
+
+            Assert.AreEqual(deserializeTest2["testkey"], "");
         }
 #endif
     }

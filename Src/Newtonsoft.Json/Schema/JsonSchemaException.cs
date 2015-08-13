@@ -29,11 +29,17 @@ using System.Runtime.Serialization;
 namespace Newtonsoft.Json.Schema
 {
     /// <summary>
+    /// <para>
     /// Returns detailed information about the schema exception.
+    /// </para>
+    /// <note type="caution">
+    /// JSON Schema validation has been moved to its own package. See <see href="http://www.newtonsoft.com/jsonschema">http://www.newtonsoft.com/jsonschema</see> for more details.
+    /// </note>
     /// </summary>
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
     [Serializable]
 #endif
+    [Obsolete("JSON Schema validation has been moved to its own package. See http://www.newtonsoft.com/jsonschema for more details.")]
     public class JsonSchemaException : JsonException
     {
         /// <summary>
@@ -83,7 +89,7 @@ namespace Newtonsoft.Json.Schema
         {
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonSchemaException"/> class.
         /// </summary>

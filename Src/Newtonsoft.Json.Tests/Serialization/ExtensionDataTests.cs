@@ -32,7 +32,7 @@ using Newtonsoft.Json.Tests.TestObjects;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -45,6 +45,130 @@ namespace Newtonsoft.Json.Tests.Serialization
     [TestFixture]
     public class ExtensionDataTests : TestFixtureBase
     {
+        public class CustomDictionary : IDictionary<string, object>
+        {
+            private readonly IDictionary<string, object> _inner = new Dictionary<string, object>();
+
+            public void Add(string key, object value)
+            {
+                _inner.Add(key, value);
+            }
+
+            public bool ContainsKey(string key)
+            {
+                return _inner.ContainsKey(key);
+            }
+
+            public ICollection<string> Keys
+            {
+                get { return _inner.Keys; }
+            }
+
+            public bool Remove(string key)
+            {
+                return _inner.Remove(key);
+            }
+
+            public bool TryGetValue(string key, out object value)
+            {
+                return _inner.TryGetValue(key, out value);
+            }
+
+            public ICollection<object> Values
+            {
+                get { return _inner.Values; }
+            }
+
+            public object this[string key]
+            {
+                get { return _inner[key]; }
+                set { _inner[key] = value; }
+            }
+
+            public void Add(KeyValuePair<string, object> item)
+            {
+                _inner.Add(item);
+            }
+
+            public void Clear()
+            {
+                _inner.Clear();
+            }
+
+            public bool Contains(KeyValuePair<string, object> item)
+            {
+                return _inner.Contains(item);
+            }
+
+            public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
+            {
+                _inner.CopyTo(array, arrayIndex);
+            }
+
+            public int Count
+            {
+                get { return _inner.Count; }
+            }
+
+            public bool IsReadOnly
+            {
+                get { return _inner.IsReadOnly; }
+            }
+
+            public bool Remove(KeyValuePair<string, object> item)
+            {
+                return _inner.Remove(item);
+            }
+
+            public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
+            {
+                return _inner.GetEnumerator();
+            }
+
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            {
+                return _inner.GetEnumerator();
+            }
+        }
+
+        public class Example
+        {
+            public Example()
+            {
+                Data = new CustomDictionary();
+            }
+
+            [JsonExtensionData]
+            public IDictionary<string, object> Data { get; private set; }
+        }
+
+        [Test]
+        public void DataBagDoesNotInheritFromDictionaryClass()
+        {
+            Example e = new Example();
+            e.Data.Add("extensionData1", new int[] { 1, 2, 3 });
+
+            string json = JsonConvert.SerializeObject(e, Formatting.Indented);
+
+            StringAssert.AreEqual(@"{
+  ""extensionData1"": [
+    1,
+    2,
+    3
+  ]
+}", json);
+
+            Example e2 = JsonConvert.DeserializeObject<Example>(json);
+
+            JArray o1 = (JArray)e2.Data["extensionData1"];
+
+            Assert.AreEqual(JTokenType.Array, o1.Type);
+            Assert.AreEqual(3, o1.Count);
+            Assert.AreEqual(1, (int)o1[0]);
+            Assert.AreEqual(2, (int)o1[1]);
+            Assert.AreEqual(3, (int)o1[2]);
+        }
+
         public class ExtensionDataDeserializeWithNonDefaultConstructor
         {
             public ExtensionDataDeserializeWithNonDefaultConstructor(string name)
@@ -117,7 +241,7 @@ namespace Newtonsoft.Json.Tests.Serialization
         }
 
 #pragma warning disable 649
-        class ExtendedObject
+        private class ExtendedObject
         {
             [JsonExtensionData]
             internal IDictionary<string, JToken> _additionalData;
@@ -604,6 +728,112 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(2, c.ExtensionData0.Count);
             Assert.AreEqual(1, (int)c.ExtensionData0["first"]);
             Assert.AreEqual(2, (int)c.ExtensionData0["second"]);
+        }
+
+        public class TestClass
+        {
+            [JsonProperty("LastActivityDate")]
+            public DateTime? LastActivityDate { get; set; }
+
+            [JsonExtensionData]
+            public Dictionary<string, object> CustomFields { get; set; }
+        }
+
+        [Test]
+        public void DeserializeNullableProperty()
+        {
+            string json = @"{ ""LastActivityDate"":null, ""CustomField1"":""Testing"" }";
+
+            var c = JsonConvert.DeserializeObject<TestClass>(json);
+
+            Assert.AreEqual(null, c.LastActivityDate);
+            Assert.AreEqual(1, c.CustomFields.Count);
+            Assert.AreEqual("Testing", (string)c.CustomFields["CustomField1"]);
+        }
+
+        public class DocNoSetter
+        {
+            private readonly JObject _content;
+
+            public DocNoSetter()
+            {
+            }
+
+            public DocNoSetter(JObject content)
+            {
+                _content = content;
+            }
+
+            [JsonProperty("_name")]
+            public string Name { get; set; }
+
+            [JsonExtensionData]
+            public JObject Content
+            {
+                get { return _content; }
+            }
+        }
+
+        [Test]
+        public void SerializeExtensionData_NoSetter()
+        {
+            string json = JsonConvert.SerializeObject(new DocNoSetter(new JObject(new JProperty("Property1", 123)))
+            {
+                Name = "documentName"
+            });
+            Assert.AreEqual(@"{""_name"":""documentName"",""Property1"":123}", json);
+        }
+
+        [Test]
+        public void SerializeExtensionData_NoSetterAndNoValue()
+        {
+            string json = JsonConvert.SerializeObject(new DocNoSetter(null)
+            {
+                Name = "documentName"
+            });
+            Assert.AreEqual(@"{""_name"":""documentName""}", json);
+        }
+
+        [Test]
+        public void DeserializeExtensionData_NoSetterAndNoExtensionData()
+        {
+            DocNoSetter doc = JsonConvert.DeserializeObject<DocNoSetter>(@"{""_name"":""documentName""}");
+
+            Assert.AreEqual("documentName", doc.Name);
+        }
+
+        [Test]
+        public void DeserializeExtensionData_NoSetterAndWithExtensionData()
+        {
+            try
+            {
+                JsonConvert.DeserializeObject<DocNoSetter>(@"{""_name"":""documentName"",""Property1"":123}");
+            }
+            catch (JsonSerializationException ex)
+            {
+                Assert.AreEqual("Error setting value in extension data for type 'Newtonsoft.Json.Tests.Serialization.ExtensionDataTests+DocNoSetter'. Path 'Property1', line 1, position 39.", ex.Message);
+                Assert.AreEqual("Cannot set value onto extension data member 'Content'. The extension data collection is null and it cannot be set.", ex.InnerException.Message);
+            }
+        }
+
+        public class DocNoGetter
+        {
+            [JsonExtensionData]
+            public JObject Content
+            {
+                set { }
+            }
+        }
+
+        [Test]
+        public void SerializeExtensionData_NoGetter()
+        {
+            ExceptionAssert.Throws<JsonException>(
+                () =>
+                {
+                    JsonConvert.SerializeObject(new DocNoGetter());
+                },
+                "Invalid extension data attribute on 'Newtonsoft.Json.Tests.Serialization.ExtensionDataTests+DocNoGetter'. Member 'Content' must have a getter.");
         }
     }
 }

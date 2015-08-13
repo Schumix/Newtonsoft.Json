@@ -190,8 +190,20 @@ namespace Newtonsoft.Json.Utilities
             return -1;
         }
 
+        public static bool Contains(this IEnumerable list, object value, IEqualityComparer comparer)
+        {
+            foreach (object item in list)
+            {
+                if (comparer.Equals(item, value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
-        /// Returns the index of the first occurrence in a sequence by using a specified IEqualityComparer.
+        /// Returns the index of the first occurrence in a sequence by using a specified IEqualityComparer{TSource}.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="list">A sequence in which to locate a value.</param>
@@ -212,7 +224,7 @@ namespace Newtonsoft.Json.Utilities
             return -1;
         }
 
-        private static IList<int> GetDimensions(IList values)
+        private static IList<int> GetDimensions(IList values, int dimensionsCount)
         {
             IList<int> dimensions = new List<int>();
 
@@ -220,6 +232,11 @@ namespace Newtonsoft.Json.Utilities
             while (true)
             {
                 dimensions.Add(currentArray.Count);
+
+                // don't keep calculating dimensions for arrays inside the value array
+                if (dimensions.Count == dimensionsCount)
+                    break;
+
                 if (currentArray.Count == 0)
                     break;
 
@@ -277,7 +294,7 @@ namespace Newtonsoft.Json.Utilities
 
         public static Array ToMultidimensionalArray(IList values, Type type, int rank)
         {
-            IList<int> dimensions = GetDimensions(values);
+            IList<int> dimensions = GetDimensions(values, rank);
 
             while (dimensions.Count < rank)
             {

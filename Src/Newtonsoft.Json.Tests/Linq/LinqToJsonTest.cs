@@ -31,7 +31,7 @@ using System.Globalization;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -54,6 +54,74 @@ namespace Newtonsoft.Json.Tests.Linq
     [TestFixture]
     public class LinqToJsonTest : TestFixtureBase
     {
+        public class TestClass_ULong
+        {
+            public ulong Value { get; set; }
+        }
+
+        [Test]
+        public void FromObject_ULongMaxValue()
+        {
+            TestClass_ULong instance = new TestClass_ULong { Value = ulong.MaxValue };
+            JObject output = JObject.FromObject(instance);
+
+            StringAssert.AreEqual(@"{
+  ""Value"": 18446744073709551615
+}", output.ToString());
+        }
+
+        public class TestClass_Byte
+        {
+            public byte Value { get; set; }
+        }
+
+        [Test]
+        public void FromObject_ByteMaxValue()
+        {
+            TestClass_Byte instance = new TestClass_Byte { Value = byte.MaxValue };
+            JObject output = JObject.FromObject(instance);
+
+            StringAssert.AreEqual(@"{
+  ""Value"": 255
+}", output.ToString());
+        }
+
+        [Test]
+        public void ToObject_Base64AndGuid()
+        {
+            JObject o = JObject.Parse("{'responseArray':'AAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA'}");
+            byte[] data = o["responseArray"].ToObject<byte[]>();
+            byte[] expected = Convert.FromBase64String("AAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA");
+
+            CollectionAssert.AreEqual(expected, data);
+
+            o = JObject.Parse("{'responseArray':'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAABAAAA'}");
+            data = o["responseArray"].ToObject<byte[]>();
+            expected = new Guid("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAABAAAA").ToByteArray();
+
+            CollectionAssert.AreEqual(expected, data);
+        }
+
+        [Test]
+        public void IncompleteContainers()
+        {
+            ExceptionAssert.Throws<JsonReaderException>(
+                () => JArray.Parse("[1,"),
+                "Unexpected end of content while loading JArray. Path '[0]', line 1, position 3.");
+
+            ExceptionAssert.Throws<JsonReaderException>(
+                () => JArray.Parse("[1"),
+                "Unexpected end of content while loading JArray. Path '[0]', line 1, position 2.");
+
+            ExceptionAssert.Throws<JsonReaderException>(
+                () => JObject.Parse("{'key':1,"),
+                "Unexpected end of content while loading JObject. Path 'key', line 1, position 9.");
+
+            ExceptionAssert.Throws<JsonReaderException>(
+                () => JObject.Parse("{'key':1"),
+                "Unexpected end of content while loading JObject. Path 'key', line 1, position 8.");
+        }
+
         [Test]
         public void EmptyJEnumerableCount()
         {
@@ -189,7 +257,7 @@ undefined
         {
             string json = @"{
   ""frameworks"": {
-    ""aspnetcore50"": {
+    ""dnxcore50"": {
       ""dependencies"": {
         ""System.Xml.ReaderWriter"": {
           ""source"": ""NuGet""
@@ -201,9 +269,9 @@ undefined
 
             JObject o = JObject.Parse(json);
 
-            JToken v1 = o["frameworks"]["aspnetcore50"]["dependencies"]["System.Xml.ReaderWriter"]["source"];
+            JToken v1 = o["frameworks"]["dnxcore50"]["dependencies"]["System.Xml.ReaderWriter"]["source"];
 
-            Console.WriteLine(v1.Path);
+            Assert.AreEqual("frameworks.dnxcore50.dependencies.['System.Xml.ReaderWriter'].source", v1.Path);
 
             JToken v2 = o.SelectToken(v1.Path);
 
@@ -240,7 +308,9 @@ undefined
 
             foreach (JObject friend in items)
             {
-                Console.WriteLine(friend);
+                StringAssert.AreEqual(@"{
+  ""name"": ""value!""
+}", friend.ToString());
             }
         }
 
@@ -284,8 +354,7 @@ undefined
             JsonSerializer serializer = new JsonSerializer();
             Person p = (Person)serializer.Deserialize(new JTokenReader(o), typeof(Person));
 
-            // John Smith
-            Console.WriteLine(p.Name);
+            Assert.AreEqual("John Smith", p.Name);
         }
 
         [Test]
@@ -694,47 +763,40 @@ keyword such as type of business.""
                                                 from c in p.Categories
                                                 select new JValue(c)))))))));
 
-            Console.WriteLine(rss.ToString());
-
-            //{
-            //  "channel": {
-            //    "title": "James Newton-King",
-            //    "link": "http://james.newtonking.com",
-            //    "description": "James Newton-King's blog.",
-            //    "item": [
-            //      {
-            //        "title": "Json.NET 1.3 + New license + Now on CodePlex",
-            //        "description": "Annoucing the release of Json.NET 1.3, the MIT license and being available on CodePlex",
-            //        "link": "http://james.newtonking.com/projects/json-net.aspx",
-            //        "category": [
-            //          "Json.NET",
-            //          "CodePlex"
-            //        ]
-            //      },
-            //      {
-            //        "title": "LINQ to JSON beta",
-            //        "description": "Annoucing LINQ to JSON",
-            //        "link": "http://james.newtonking.com/projects/json-net.aspx",
-            //        "category": [
-            //          "Json.NET",
-            //          "LINQ"
-            //        ]
-            //      }
-            //    ]
-            //  }
-            //}
+            StringAssert.AreEqual(@"{
+  ""channel"": {
+    ""title"": ""James Newton-King"",
+    ""link"": ""http://james.newtonking.com"",
+    ""description"": ""James Newton-King's blog."",
+    ""item"": [
+      {
+        ""title"": ""Json.NET 1.3 + New license + Now on CodePlex"",
+        ""description"": ""Annoucing the release of Json.NET 1.3, the MIT license and being available on CodePlex"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""CodePlex""
+        ]
+      },
+      {
+        ""title"": ""LINQ to JSON beta"",
+        ""description"": ""Annoucing LINQ to JSON"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""LINQ""
+        ]
+      }
+    ]
+  }
+}", rss.ToString());
 
             var postTitles =
                 from p in rss["channel"]["item"]
                 select p.Value<string>("title");
 
-            foreach (var item in postTitles)
-            {
-                Console.WriteLine(item);
-            }
-
-            //LINQ to JSON beta
-            //Json.NET 1.3 + New license + Now on CodePlex
+            Assert.AreEqual("Json.NET 1.3 + New license + Now on CodePlex", postTitles.ElementAt(0));
+            Assert.AreEqual("LINQ to JSON beta", postTitles.ElementAt(1));
 
             var categories =
                 from c in rss["channel"]["item"].Children()["category"].Values<string>()
@@ -743,14 +805,12 @@ keyword such as type of business.""
                 orderby g.Count() descending
                 select new { Category = g.Key, Count = g.Count() };
 
-            foreach (var c in categories)
-            {
-                Console.WriteLine(c.Category + " - Count: " + c.Count);
-            }
-
-            //Json.NET - Count: 2
-            //LINQ - Count: 1
-            //CodePlex - Count: 1
+            Assert.AreEqual("Json.NET", categories.ElementAt(0).Category);
+            Assert.AreEqual(2, categories.ElementAt(0).Count);
+            Assert.AreEqual("CodePlex", categories.ElementAt(1).Category);
+            Assert.AreEqual(1, categories.ElementAt(1).Count);
+            Assert.AreEqual("LINQ", categories.ElementAt(2).Category);
+            Assert.AreEqual(1, categories.ElementAt(2).Count);
         }
 
         [Test]
@@ -910,7 +970,34 @@ keyword such as type of business.""
                 }
             });
 
-            Console.WriteLine(o.ToString());
+            StringAssert.AreEqual(@"{
+  ""channel"": {
+    ""title"": ""James Newton-King"",
+    ""link"": ""http://james.newtonking.com"",
+    ""description"": ""James Newton-King's blog."",
+    ""item"": [
+      {
+        ""title"": ""Json.NET 1.3 + New license + Now on CodePlex"",
+        ""description"": ""Annoucing the release of Json.NET 1.3, the MIT license and being available on CodePlex"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""CodePlex""
+        ]
+      },
+      {
+        ""title"": ""LINQ to JSON beta"",
+        ""description"": ""Annoucing LINQ to JSON"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""LINQ""
+        ]
+      }
+    ]
+  }
+}", o.ToString());
+
             CustomAssert.IsInstanceOfType(typeof(JObject), o);
             CustomAssert.IsInstanceOfType(typeof(JObject), o["channel"]);
             Assert.AreEqual("James Newton-King", (string)o["channel"]["title"]);
@@ -948,7 +1035,34 @@ keyword such as type of business.""
                 }
             });
 
-            Console.WriteLine(o.ToString());
+            StringAssert.AreEqual(@"{
+  ""channel"": {
+    ""title"": ""James Newton-King"",
+    ""link"": ""http://james.newtonking.com"",
+    ""description"": ""James Newton-King's blog."",
+    ""item"": [
+      {
+        ""title"": ""Json.NET 1.3 + New license + Now on CodePlex"",
+        ""description"": ""Annoucing the release of Json.NET 1.3, the MIT license and being available on CodePlex"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""CodePlex""
+        ]
+      },
+      {
+        ""title"": ""LINQ to JSON beta"",
+        ""description"": ""Annoucing LINQ to JSON"",
+        ""link"": ""http://james.newtonking.com/projects/json-net.aspx"",
+        ""category"": [
+          ""Json.NET"",
+          ""LINQ""
+        ]
+      }
+    ]
+  }
+}", o.ToString()); 
+            
             CustomAssert.IsInstanceOfType(typeof(JObject), o);
             CustomAssert.IsInstanceOfType(typeof(JObject), o["channel"]);
             Assert.AreEqual("James Newton-King", (string)o["channel"]["title"]);
@@ -1161,5 +1275,95 @@ keyword such as type of business.""
             }, "The best overloaded method match for 'System.Collections.Generic.IDictionary<string,string>.Add(string, string)' has some invalid arguments");
         }
 #endif
+
+        [Test]
+        public void SerializeWithNoRedundentIdPropertiesTest()
+        {
+            Dictionary<string, object> dic1 = new Dictionary<string, object>();
+            Dictionary<string, object> dic2 = new Dictionary<string, object>();
+            Dictionary<string, object> dic3 = new Dictionary<string, object>();
+            List<object> list1 = new List<object>();
+            List<object> list2 = new List<object>();
+
+            dic1.Add("list1", list1);
+            dic1.Add("list2", list2);
+            dic1.Add("dic1", dic1);
+            dic1.Add("dic2", dic2);
+            dic1.Add("dic3", dic3);
+            dic1.Add("integer", 12345);
+
+            list1.Add("A string!");
+            list1.Add(dic1);
+            list1.Add(new List<object>());
+
+            dic3.Add("dic3", dic3);
+
+            var json = SerializeWithNoRedundentIdProperties(dic1);
+
+            StringAssert.AreEqual(@"{
+  ""$id"": ""1"",
+  ""list1"": [
+    ""A string!"",
+    {
+      ""$ref"": ""1""
+    },
+    []
+  ],
+  ""list2"": [],
+  ""dic1"": {
+    ""$ref"": ""1""
+  },
+  ""dic2"": {},
+  ""dic3"": {
+    ""$id"": ""3"",
+    ""dic3"": {
+      ""$ref"": ""3""
+    }
+  },
+  ""integer"": 12345
+}", json);
+        }
+
+        private static string SerializeWithNoRedundentIdProperties(object o)
+        {
+            JTokenWriter writer = new JTokenWriter();
+            JsonSerializer serializer = JsonSerializer.Create(new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects
+            });
+            serializer.Serialize(writer, o);
+
+            JToken t = writer.Token;
+
+            if (t is JContainer)
+            {
+                JContainer c = t as JContainer;
+
+                // find all the $id properties in the JSON
+                IList<JProperty> ids = c.Descendants().OfType<JProperty>().Where(d => d.Name == "$id").ToList();
+
+                if (ids.Count > 0)
+                {
+                    // find all the $ref properties in the JSON
+                    IList<JProperty> refs = c.Descendants().OfType<JProperty>().Where(d => d.Name == "$ref").ToList();
+
+                    foreach (JProperty idProperty in ids)
+                    {
+                        // check whether the $id property is used by a $ref
+                        bool idUsed = refs.Any(r => idProperty.Value.ToString() == r.Value.ToString());
+
+                        if (!idUsed)
+                        {
+                            // remove unused $id
+                            idProperty.Remove();
+                        }
+                    }
+                }
+            }
+
+            string json = t.ToString();
+            return json;
+        }
     }
 }

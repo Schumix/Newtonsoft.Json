@@ -33,7 +33,7 @@ using Newtonsoft.Json.Utilities;
 namespace Newtonsoft.Json.Serialization
 {
     /// <summary>
-    /// Contract details for a <see cref="Type"/> used by the <see cref="JsonSerializer"/>.
+    /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
     public class JsonObjectContract : JsonContainerContract
     {
@@ -155,7 +155,7 @@ namespace Newtonsoft.Json.Serialization
                     {
                         foreach (JsonProperty property in Properties)
                         {
-                            if (property.Required != Required.Default || ((property.DefaultValueHandling & DefaultValueHandling.Populate) == DefaultValueHandling.Populate) && property.Writable)
+                            if (property.Required != Required.Default || (property.DefaultValueHandling & DefaultValueHandling.Populate) == DefaultValueHandling.Populate)
                             {
                                 _hasRequiredOrDefaultValueProperties = true;
                                 break;
@@ -181,7 +181,7 @@ namespace Newtonsoft.Json.Serialization
             CreatorParameters = new JsonPropertyCollection(UnderlyingType);
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
 #if !(NET20 || NET35)
         [SecuritySafeCritical]
 #endif

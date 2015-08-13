@@ -51,7 +51,6 @@ namespace Newtonsoft.Json.Serialization
         private JsonContract _rootContract;
         private int _rootLevel;
         private readonly List<object> _serializeStack = new List<object>();
-        private JsonSerializerProxy _internalSerializer;
 
         public JsonSerializerInternalWriter(JsonSerializer serializer)
             : base(serializer)
@@ -70,7 +69,14 @@ namespace Newtonsoft.Json.Serialization
 
             try
             {
-                SerializeValue(jsonWriter, value, contract, null, null, null);
+                if (ShouldWriteReference(value, null, contract, null, null))
+                {
+                    WriteReference(jsonWriter, value);
+                }
+                else
+                {
+                    SerializeValue(jsonWriter, value, contract, null, null, null);
+                }
             }
             catch (Exception ex)
             {
@@ -97,10 +103,10 @@ namespace Newtonsoft.Json.Serialization
 
         private JsonSerializerProxy GetInternalSerializer()
         {
-            if (_internalSerializer == null)
-                _internalSerializer = new JsonSerializerProxy(this);
+            if (InternalSerializer == null)
+                InternalSerializer = new JsonSerializerProxy(this);
 
-            return _internalSerializer;
+            return InternalSerializer;
         }
 
         private JsonContract GetContractSafe(object value)
@@ -182,7 +188,7 @@ namespace Newtonsoft.Json.Serialization
                     SerializeDynamic(writer, (IDynamicMetaObjectProvider)value, (JsonDynamicContract)valueContract, member, containerContract, containerProperty);
                     break;
 #endif
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
                 case JsonContractType.Serializable:
                     SerializeISerializable(writer, (ISerializable)value, (JsonISerializableContract)valueContract, member, containerContract, containerProperty);
                     break;
@@ -265,7 +271,11 @@ namespace Newtonsoft.Json.Serialization
             if (referenceLoopHandling == null && containerContract != null)
                 referenceLoopHandling = containerContract.ItemReferenceLoopHandling;
 
-            if (_serializeStack.IndexOf(value) != -1)
+            bool exists = (Serializer._equalityComparer != null)
+                ? _serializeStack.Contains(value, Serializer._equalityComparer)
+                : _serializeStack.Contains(value);
+
+            if (exists)
             {
                 string message = "Self referencing loop detected";
                 if (property != null)
@@ -321,7 +331,7 @@ namespace Newtonsoft.Json.Serialization
 
         internal static bool TryConvertToString(object value, Type type, out string s)
         {
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
             TypeConverter converter = ConvertUtils.GetConverter(type);
 
             // use the objectType's TypeConverter if it has one and can convert to a string
@@ -337,12 +347,12 @@ namespace Newtonsoft.Json.Serialization
             }
 #endif
 
-#if NETFX_CORE || PORTABLE
-      if (value is Guid || value is Uri || value is TimeSpan)
-      {
-        s = value.ToString();
-        return true;
-      }
+#if (DOTNET || PORTABLE)
+            if (value is Guid || value is Uri || value is TimeSpan)
+            {
+                s = value.ToString();
+                return true;
+            }
 #endif
 
             if (value is Type)
@@ -497,7 +507,8 @@ namespace Newtonsoft.Json.Serialization
             writer.WriteStartObject();
 
             bool isReference = ResolveIsReference(contract, member, collectionContract, containerProperty) ?? HasFlag(Serializer._preserveReferencesHandling, PreserveReferencesHandling.Objects);
-            if (isReference)
+            // don't make readonly fields the referenced value because they can't be deserialized to
+            if (isReference && (member == null || member.Writable))
             {
                 WriteReferenceIdProperty(writer, contract.UnderlyingType, value);
             }
@@ -656,7 +667,7 @@ namespace Newtonsoft.Json.Serialization
 
             writer.WriteStartArray();
 
-            for (int i = 0; i < values.GetLength(dimension); i++)
+            for (int i = values.GetLowerBound(dimension); i <= values.GetUpperBound(dimension); i++)
             {
                 newIndices[dimension] = i;
                 bool isTopLevel = (newIndices.Length == values.Rank);
@@ -701,6 +712,9 @@ namespace Newtonsoft.Json.Serialization
         private bool WriteStartArray(JsonWriter writer, object values, JsonArrayContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerProperty)
         {
             bool isReference = ResolveIsReference(contract, member, containerContract, containerProperty) ?? HasFlag(Serializer._preserveReferencesHandling, PreserveReferencesHandling.Arrays);
+            // don't make readonly fields the referenced value because they can't be deserialized to
+            isReference = (isReference && (member == null || member.Writable));
+
             bool includeTypeDetails = ShouldWriteType(TypeNameHandling.Arrays, contract, member, containerContract, containerProperty);
             bool writeMetadataObject = isReference || includeTypeDetails;
 
@@ -725,7 +739,7 @@ namespace Newtonsoft.Json.Serialization
             return writeMetadataObject;
         }
 
-#if !(NETFX_CORE || PORTABLE40 || PORTABLE)
+#if !(DOTNET || PORTABLE40 || PORTABLE)
 #if !(NET20 || NET35)
         [SecuritySafeCritical]
 #endif
@@ -733,8 +747,11 @@ namespace Newtonsoft.Json.Serialization
         {
             if (!JsonTypeReflector.FullyTrusted)
             {
-                throw JsonSerializationException.Create(null, writer.ContainerPath, @"Type '{0}' implements ISerializable but cannot be serialized using the ISerializable interface because the current application is not fully trusted and ISerializable can expose secure data.
-To fix this error either change the environment to be fully trusted, change the application to not deserialize the type, add JsonObjectAttribute to the type or change the JsonSerializer setting ContractResolver to use a new DefaultContractResolver with IgnoreSerializableInterface set to true.".FormatWith(CultureInfo.InvariantCulture, value.GetType()), null);
+                string message = @"Type '{0}' implements ISerializable but cannot be serialized using the ISerializable interface because the current application is not fully trusted and ISerializable can expose secure data." + Environment.NewLine +
+                                 @"To fix this error either change the environment to be fully trusted, change the application to not deserialize the type, add JsonObjectAttribute to the type or change the JsonSerializer setting ContractResolver to use a new DefaultContractResolver with IgnoreSerializableInterface set to true." + Environment.NewLine;
+                message = message.FormatWith(CultureInfo.InvariantCulture, value.GetType());
+
+                throw JsonSerializationException.Create(null, writer.ContainerPath, message, null);
             }
 
             OnSerializing(writer, contract, value);
@@ -749,7 +766,12 @@ To fix this error either change the environment to be fully trusted, change the 
             {
                 JsonContract valueContract = GetContractSafe(serializationEntry.Value);
 
-                if (CheckForCircularReference(writer, serializationEntry.Value, null, valueContract, contract, member))
+                if (ShouldWriteReference(serializationEntry.Value, null, valueContract, contract, member))
+                {
+                    writer.WritePropertyName(serializationEntry.Name);
+                    WriteReference(writer, serializationEntry.Value);
+                }
+                else if (CheckForCircularReference(writer, serializationEntry.Value, null, valueContract, contract, member))
                 {
                     writer.WritePropertyName(serializationEntry.Name);
                     SerializeValue(writer, serializationEntry.Value, valueContract, null, contract, member);
@@ -909,8 +931,8 @@ To fix this error either change the environment to be fully trusted, change the 
                 bool escape;
                 string propertyName = GetPropertyName(writer, entry.Key, contract.KeyContract, out escape);
 
-                propertyName = (contract.PropertyNameResolver != null)
-                    ? contract.PropertyNameResolver(propertyName)
+                propertyName = (contract.DictionaryKeyResolver != null)
+                    ? contract.DictionaryKeyResolver(propertyName)
                     : propertyName;
 
                 try

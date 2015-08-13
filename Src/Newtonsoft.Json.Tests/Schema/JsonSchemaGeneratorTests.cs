@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+#pragma warning disable 618
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ using Newtonsoft.Json.Utilities;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#elif ASPNETCORE50
+#elif DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
@@ -94,7 +95,7 @@ namespace Newtonsoft.Json.Tests.Schema
             Assert.IsTrue(o.IsValid(schema));
         }
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
         [Test]
         public void Generate_DefaultValueAttributeTestClass()
         {
@@ -313,7 +314,7 @@ namespace Newtonsoft.Json.Tests.Schema
             Assert.IsTrue(v.IsValid(schema));
         }
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
         [Test]
         public void GenerateSchemaForISerializable()
         {
@@ -328,7 +329,7 @@ namespace Newtonsoft.Json.Tests.Schema
         }
 #endif
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
         [Test]
         public void GenerateSchemaForDBNull()
         {
@@ -343,7 +344,9 @@ namespace Newtonsoft.Json.Tests.Schema
         public class CustomDirectoryInfoMapper : DefaultContractResolver
         {
             public CustomDirectoryInfoMapper()
+#pragma warning disable 612
                 : base(true)
+#pragma warning restore 612
             {
             }
 
@@ -373,7 +376,7 @@ namespace Newtonsoft.Json.Tests.Schema
             generator.UndefinedSchemaIdHandling = UndefinedSchemaIdHandling.UseTypeName;
             generator.ContractResolver = new CustomDirectoryInfoMapper
             {
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50)
                 IgnoreSerializableAttribute = true
 #endif
             };
@@ -457,7 +460,7 @@ namespace Newtonsoft.Json.Tests.Schema
             serializer.Converters.Add(new IsoDateTimeConverter());
             serializer.ContractResolver = new CustomDirectoryInfoMapper
             {
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50)
                 IgnoreSerializableInterface = true
 #endif
             };
@@ -477,7 +480,7 @@ namespace Newtonsoft.Json.Tests.Schema
             generator.UndefinedSchemaIdHandling = UndefinedSchemaIdHandling.UseTypeName;
             generator.ContractResolver = new CamelCasePropertyNamesContractResolver()
             {
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
                 IgnoreSerializableAttribute = true
 #endif
             };
@@ -522,7 +525,7 @@ namespace Newtonsoft.Json.Tests.Schema
 }", json);
         }
 
-#if !(NETFX_CORE || PORTABLE || ASPNETCORE50 || PORTABLE40)
+#if !(NETFX_CORE || PORTABLE || DNXCORE50 || PORTABLE40)
         [Test]
         public void GenerateSchemaSerializable()
         {
@@ -775,35 +778,6 @@ namespace Newtonsoft.Json.Tests.Schema
         {
             public SortTypeFlagAsString y;
         }
-
-#if !ASPNETCORE50
-        [Test]
-        [Ignore]
-        public void GenerateSchemaWithStringEnum()
-        {
-            JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator();
-            JsonSchema schema = jsonSchemaGenerator.Generate(typeof(Y));
-
-            string json = schema.ToString();
-
-            // NOTE: This fails because the enum is serialized as an integer and not a string.
-            // NOTE: There should exist a way to serialize the enum as lowercase strings.
-            Assert.AreEqual(@"{
-  ""type"": ""object"",
-  ""properties"": {
-    ""y"": {
-      ""required"": true,
-      ""type"": ""string"",
-      ""enum"": [
-        ""no"",
-        ""asc"",
-        ""desc""
-      ]
-    }
-  }
-}", json);
-        }
-#endif
     }
 
     public class NullableInt32TestClass
@@ -875,3 +849,4 @@ namespace Newtonsoft.Json.Tests.Schema
     {
     }
 }
+#pragma warning restore 618

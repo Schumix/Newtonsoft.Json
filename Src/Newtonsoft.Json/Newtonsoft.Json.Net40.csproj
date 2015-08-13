@@ -49,6 +49,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\Net40\</OutputPath>
+    <IntermediateOutputPath>obj\Debug\Net40\</IntermediateOutputPath>
     <DefineConstants>TRACE;DEBUG;NET40;CODE_ANALYSIS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -63,6 +64,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\Net40\</OutputPath>
+    <IntermediateOutputPath>obj\Release\Net40\</IntermediateOutputPath>
     <DefineConstants>TRACE;NET40;CODE_ANALYSIS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -119,6 +121,7 @@
     <Compile Include="JsonConstructorAttribute.cs" />
     <Compile Include="JsonExtensionDataAttribute.cs" />
     <Compile Include="JsonPosition.cs" />
+    <Compile Include="JsonRequiredAttribute.cs" />
     <Compile Include="Linq\JPropertyKeyedCollection.cs" />
     <Compile Include="Linq\JsonMergeSettings.cs" />
     <Compile Include="Linq\JsonPath\ArrayIndexFilter.cs" />
@@ -135,9 +138,11 @@
     <Compile Include="MetadataPropertyHandling.cs" />
     <Compile Include="Serialization\DiagnosticsTraceWriter.cs" />
     <Compile Include="Serialization\ExpressionValueProvider.cs" />
+    <Compile Include="Serialization\IAttributeProvider.cs" />
     <Compile Include="Serialization\ITraceWriter.cs" />
     <Compile Include="Serialization\JsonContainerContract.cs" />
     <Compile Include="Serialization\MemoryTraceWriter.cs" />
+    <Compile Include="Serialization\ReflectionAttributeProvider.cs" />
     <Compile Include="Serialization\TraceJsonReader.cs" />
     <Compile Include="Serialization\TraceJsonWriter.cs" />
     <Compile Include="StringEscapeHandling.cs" />
@@ -244,6 +249,7 @@
     <Compile Include="Utilities\FSharpUtils.cs" />
     <Compile Include="Utilities\ILGeneratorExtensions.cs" />
     <Compile Include="Utilities\ImmutableCollectionsUtils.cs" />
+    <Compile Include="Utilities\JsonTokenUtils.cs" />
     <Compile Include="Utilities\LinqBridge.cs" />
     <Compile Include="Utilities\PropertyNameTable.cs" />
     <Compile Include="Utilities\ReflectionDelegateFactory.cs" />
